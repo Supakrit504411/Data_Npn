@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>กำลังเข้าสู่ระบบ...</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #f5f4f8; color: #2a1f3d;
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  }
+  .card {
+    background: #fff; border-radius: 20px; padding: 48px;
+    box-shadow: 0 4px 24px rgba(42,31,61,0.08);
+    text-align: center; max-width: 420px; width: 90%;
+  }
+  .spinner {
+    width: 48px; height: 48px; border: 4px solid rgba(75,46,131,0.15);
+    border-top-color: #4b2e83; border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin: 0 auto 24px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  h2 { font-size: 22px; color: #4b2e83; margin-bottom: 8px; }
+  p { font-size: 16px; color: #5a4e6e; line-height: 1.6; }
+  .hidden { display: none; }
+  .error h2 { color: #bf3030; }
+  .pending h2 { color: #c9981a; }
+  .profile-pic {
+    width: 64px; height: 64px; border-radius: 50%;
+    margin: 0 auto 16px; border: 3px solid #4b2e83;
+    object-fit: cover;
+  }
+  .btn {
+    display: inline-block; margin-top: 20px; padding: 12px 28px;
+    background: #4b2e83; color: #fff; border: none; border-radius: 10px;
+    font-size: 16px; font-weight: 600; cursor: pointer; text-decoration: none;
+    font-family: inherit;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div id="loading">
+    <div class="spinner"></div>
+    <h2>กำลังเข้าสู่ระบบ...</h2>
+    <p>กำลังตรวจสอบสิทธิ์กับ LINE</p>
+  </div>
+  <div id="error" class="hidden error">
+    <h2>เข้าสู่ระบบไม่สำเร็จ</h2>
+    <p id="errorMsg"></p>
+    <a class="btn" href="index.html">ลองใหม่อีกครั้ง</a>
+  </div>
+  <div id="pending" class="hidden pending">
+    <img id="pendingPic" class="profile-pic hidden" src="" alt="">
+    <h2>⏳ รอการอนุมัติ</h2>
+    <p id="pendingName"></p>
+    <p style="margin-top:8px; font-size:14px; color:#8d84a2;">
+      บัญชีของคุณถูกบันทึกแล้ว<br>กรุณารอผู้ดูแลระบบอนุมัติสิทธิ์การเข้าถึง
+    </p>
+    <a class="btn" href="index.html">กลับหน้าหลัก</a>
+  </div>
+</div>
+
+<script>
+  // ============ CONFIG ============
+  const APPS_SCRIPT_URL = localStorage.getItem('apps_script_url') || 'YOUR_APPS_SCRIPT_URL';
+
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const state = params.get('state');
+  const savedState = sessionStorage.getItem('line_state');
+  const error = params.get('error');
+
+  function showError(msg) {
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('error').classList.remove('hidden');
+    document.getElementById('errorMsg').textContent = msg;
+  }
+
+  function showPending(data) {
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('pending').classList.remove('hidden');
+    document.getElementById('pendingName').textContent = 'สวัสดี ' + data.displayName;
+    if (data.pictureUrl) {
+      const pic = document.getElementById('pendingPic');
+      pic.src = data.pictureUrl;
+      pic.classList.remove('hidden');
+    }
+  }
+
+  if (error) {
+    showError('LINE ปฏิเสธการเข้าสู่ระบบ: ' + (params.get('error_description') || error));
+  } else if (!code) {
+    showError('ไม่พบรหัสยืนยันจาก LINE');
+  } else if (state !== savedState) {
+    showError('State ไม่ตรงกัน กรุณาลองใหม่');
+  } else if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL') {
+    showError('ยังไม่ได้ตั้งค่า Apps Script URL');
+  } else {
+    // ส่ง code ไป Apps Script เพื่อแลก token + ตรวจสิทธิ์
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'login',
+        code: code,
+        redirectUri: window.location.origin + '/callback.html'
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) {
+        showError('เกิดข้อผิดพลาด: ' + (data.detail || data.error));
+        return;
+      }
+      if (data.status === 'active') {
+        // อนุมัติแล้ว — เก็บข้อมูลแล้วไป dashboard
+        sessionStorage.setItem('line_logged_in', 'true');
+        sessionStorage.setItem('line_user_id', data.userId);
+        sessionStorage.setItem('line_display_name', data.displayName);
+        sessionStorage.setItem('line_picture_url', data.pictureUrl || '');
+        window.location.href = 'dashboard.html';
+      } else {
+        // รอการอนุมัติ
+        showPending(data);
+      }
+    })
+    .catch(err => {
+      showError('ไม่สามารถเชื่อมต่อระบบได้: ' + err.message);
+    });
+  }
+</script>
+</body>
+</html>
