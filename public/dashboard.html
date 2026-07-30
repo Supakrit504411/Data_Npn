@@ -146,7 +146,7 @@
     position: sticky; top: 0; z-index: 100;
   }
   .header-top {
-    display: flex; align-items: baseline; gap: 16px;
+    display: flex; align-items: center; gap: 16px;
     flex-wrap: wrap; margin-bottom: 16px;
   }
   .header h1 { font-size: 28px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
@@ -155,6 +155,20 @@
     background: var(--purple); padding: 5px 16px; border-radius: 6px;
   }
   .header .subtitle { font-size: 13px; color: var(--text-3); margin-left: auto; }
+  .header-actions {
+    margin-left: auto; display: flex; gap: 8px; align-items: center;
+  }
+  .btn-icon {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 8px; border: 1.5px solid var(--border);
+    background: var(--surface); color: var(--text-2); font-size: 14px;
+    font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+  }
+  .btn-icon:hover { background: var(--purple-glow); color: var(--purple); border-color: var(--purple); }
+  .btn-icon.logout { color: var(--negative); border-color: rgba(191,48,48,0.2); }
+  .btn-icon.logout:hover { background: var(--negative-bg); border-color: var(--negative); }
+  .btn-icon svg { width: 16px; height: 16px; }
 
   /* Tabs */
   .tabs {
@@ -495,6 +509,16 @@
   <div class="header-top">
     <h1>ข้อมูลสำคัญ กฟจ.นครพนม</h1>
     <span class="period">สะสม ม.ค.–มิ.ย. 69 vs ม.ค.–มิ.ย. 68</span>
+    <div class="header-actions">
+      <button class="btn-icon" id="btnReload" title="โหลดข้อมูลใหม่">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+        โหลดใหม่
+      </button>
+      <button class="btn-icon logout" id="btnLogout" title="ออกจากระบบ">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        ออกจากระบบ
+      </button>
+    </div>
   </div>
   <div class="tabs" id="tabs">
     <button class="tab active" data-i="0">ภาพรวม</button>
@@ -1383,7 +1407,67 @@ function openModal(key) {
     html += `<div class="modal-note">${d.note}</div>`;
   }
 
+  // Bar chart for comparison
+  const chartRows = d.rows || (d.current && d.prev ? [[d.title, d.current, d.prev]] : []);
+  if (chartRows.length > 0) {
+    html += '<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">';
+    html += '<div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">กราฟเปรียบเทียบ</div>';
+    html += '<canvas id="modalChart" width="480" height="' + Math.max(100, chartRows.length * 56 + 40) + '" style="width:100%;max-width:480px"></canvas>';
+    html += '</div>';
+  }
+
   modalBody.innerHTML = html;
+
+  // Draw bar chart if canvas exists
+  const mc = document.getElementById('modalChart');
+  if (mc && chartRows.length > 0) {
+    const ctx = mc.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    mc.width = mc.offsetWidth * dpr;
+    mc.height = mc.offsetHeight * dpr;
+    ctx.scale(dpr, dpr);
+    const W = mc.offsetWidth, H = mc.offsetHeight;
+    const parseNum = s => { const n = parseFloat(String(s).replace(/[^0-9.\-]/g, '')); return isNaN(n) ? 0 : n; };
+    const purple = getComputedStyle(document.documentElement).getPropertyValue('--purple').trim() || '#4b2e83';
+    const gold = getComputedStyle(document.documentElement).getPropertyValue('--gold').trim() || '#c9981a';
+    const textCol = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#2a1f3d';
+    const labelW = 120, barAreaW = W - labelW - 60, barH = 18, gap = 56;
+    let maxVal = 0;
+    const parsed = chartRows.map(r => {
+      const v69 = parseNum(r[1]), v68 = parseNum(r[2]);
+      const m = Math.max(Math.abs(v69), Math.abs(v68));
+      if (m > maxVal) maxVal = m;
+      return { label: r[0], v69, v68 };
+    });
+    if (maxVal === 0) maxVal = 1;
+    const startY = 10;
+    parsed.forEach((p, i) => {
+      const y = startY + i * gap;
+      ctx.fillStyle = textCol; ctx.font = '12px system-ui,sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      const lbl = p.label.length > 16 ? p.label.substring(0, 15) + '…' : p.label;
+      ctx.fillText(lbl, labelW - 8, y + barH / 2);
+      // 69 bar
+      const w69 = Math.abs(p.v69) / maxVal * barAreaW;
+      ctx.fillStyle = purple; ctx.globalAlpha = 0.85;
+      ctx.fillRect(labelW, y, Math.max(w69, 2), barH);
+      ctx.globalAlpha = 1; ctx.fillStyle = textCol; ctx.font = 'bold 12px system-ui,sans-serif'; ctx.textAlign = 'left';
+      ctx.fillText(p.v69.toLocaleString(), labelW + w69 + 6, y + barH / 2);
+      // 68 bar
+      const w68 = Math.abs(p.v68) / maxVal * barAreaW;
+      ctx.fillStyle = gold; ctx.globalAlpha = 0.7;
+      ctx.fillRect(labelW, y + barH + 4, Math.max(w68, 2), barH);
+      ctx.globalAlpha = 1; ctx.fillStyle = textCol; ctx.font = '12px system-ui,sans-serif';
+      ctx.fillText(p.v68.toLocaleString(), labelW + w68 + 6, y + barH + 4 + barH / 2);
+    });
+    // Legend
+    const legY = H - 20;
+    ctx.fillStyle = purple; ctx.globalAlpha = 0.85; ctx.fillRect(labelW, legY, 14, 12);
+    ctx.globalAlpha = 1; ctx.fillStyle = textCol; ctx.font = 'bold 12px system-ui,sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText('2569', labelW + 18, legY + 9);
+    ctx.fillStyle = gold; ctx.globalAlpha = 0.7; ctx.fillRect(labelW + 65, legY, 14, 12);
+    ctx.globalAlpha = 1; ctx.fillStyle = textCol;
+    ctx.fillText('2568', labelW + 83, legY + 9);
+  }
   overlay.classList.add('open');
 }
 
@@ -1515,4 +1599,38 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.lineTo(x + w, y + h); ctx.lineTo(x, y + h); ctx.lineTo(x, y + r);
   ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath();
 }
+
+// ============ RELOAD & LOGOUT ============
+document.getElementById('btnLogout').addEventListener('click', function() {
+  sessionStorage.clear();
+  window.location.href = 'index.html';
+});
+
+document.getElementById('btnReload').addEventListener('click', function() {
+  const btn = this;
+  btn.disabled = true;
+  btn.style.opacity = '0.5';
+  const APPS_URL = localStorage.getItem('apps_script_url');
+  if (!APPS_URL || APPS_URL === 'YOUR_APPS_SCRIPT_URL') {
+    window.location.reload();
+    return;
+  }
+  fetch(APPS_URL + '?action=getData')
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'ok' && data.rows) {
+        alert('โหลดข้อมูลจาก Google Sheet สำเร็จ\nอัปเดตล่าสุด: ' + data.lastUpdated + '\nจำนวนแถว: ' + data.rows.length);
+        window.location.reload();
+      } else {
+        alert('ไม่สามารถโหลดข้อมูลได้: ' + (data.error || 'unknown'));
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      }
+    })
+    .catch(err => {
+      alert('เกิดข้อผิดพลาด: ' + err.message);
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    });
+});
 </script>

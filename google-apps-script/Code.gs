@@ -19,6 +19,9 @@ function doPost(e) {
     if (action === 'check') {
       return handleCheck(body.userId);
     }
+    if (action === 'getData') {
+      return handleGetData();
+    }
 
     return jsonResponse({ error: 'unknown action' });
   } catch (err) {
@@ -27,7 +30,37 @@ function doPost(e) {
 }
 
 function doGet(e) {
+  const action = e && e.parameter && e.parameter.action;
+  if (action === 'getData') {
+    return handleGetData();
+  }
   return jsonResponse({ status: 'ok', message: 'LINE User Management API' });
+}
+
+// --- GET DATA: อ่านข้อมูลจากชีต "2026" ---
+function handleGetData() {
+  try {
+    const ss = SpreadsheetApp.openById('13n2T_ZH7K-av4hRa1Q1iHLoyn-GV-XeeQ9m3mxUnT_8');
+    const sheet = ss.getSheetByName('2026');
+    if (!sheet) {
+      return jsonResponse({ status: 'error', error: 'Sheet "2026" not found' });
+    }
+
+    const values = sheet.getDataRange().getValues();
+    const headers = values.length > 0 ? values[0] : [];
+    const rows = values.length > 1 ? values.slice(1) : [];
+
+    return jsonResponse({
+      status: 'ok',
+      sheetName: '2026',
+      lastUpdated: Utilities.formatDate(new Date(), 'Asia/Bangkok', 'yyyy-MM-dd HH:mm:ss'),
+      headers: headers,
+      data: rows,
+      rows: rows
+    });
+  } catch (err) {
+    return jsonResponse({ status: 'error', error: err.message });
+  }
 }
 
 // --- LOGIN: แลก code → token → profile → บันทึก sheet → ตรวจสิทธิ์ ---
