@@ -1371,7 +1371,7 @@ function openModal(key) {
   if (chartRows.length > 0) {
     html += '<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">';
     html += '<div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">กราฟเปรียบเทียบ</div>';
-    html += '<canvas id="modalChart" width="480" height="' + Math.max(100, chartRows.length * 56 + 40) + '" style="width:100%;max-width:480px"></canvas>';
+    html += '<canvas id="modalChart" width="480" height="' + Math.max(140, chartRows.length * 56 + 60) + '" style="width:100%;max-width:480px"></canvas>';
     html += '</div>';
   }
 
@@ -1390,7 +1390,7 @@ function openModal(key) {
     const purple = getComputedStyle(document.documentElement).getPropertyValue('--purple').trim() || '#4b2e83';
     const gold = getComputedStyle(document.documentElement).getPropertyValue('--gold').trim() || '#c9981a';
     const textCol = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#2a1f3d';
-    const labelW = 120, barAreaW = W - labelW - 60, barH = 18, gap = 56;
+    const labelW = 120, barAreaW = W - labelW - 70, barH = 18, gap = 56;
     let maxVal = 0;
     const parsed = chartRows.map(r => {
       const v69 = parseNum(r[1]), v68 = parseNum(r[2]);
@@ -1446,43 +1446,43 @@ function openAutoModal(tr) {
   if (!label) return;
   modalTitle.textContent = label;
 
-  // Detect table type from headers
   const table = tr.closest('table');
   const ths = table ? table.querySelectorAll('thead th') : [];
   const headers = Array.from(ths).map(th => th.textContent.trim());
 
-  let html = '';
-  // Show comparison boxes if we have at least v69 and v68
   const v69 = cells.length > 1 ? cells[1].textContent.trim() : '';
   const v68 = cells.length > 2 ? cells[2].textContent.trim() : '';
   const diff = cells.length > 3 ? cells[3].textContent.trim() : '';
   const pct = cells.length > 4 ? cells[4].textContent.trim() : '';
   const unit = cells.length > 5 ? cells[5].textContent.trim() : '';
 
+  let html = '';
+
+  // Unit badge at top-right
+  if (unit) {
+    html += `<div style="text-align:right;margin-bottom:8px"><span style="display:inline-block;background:var(--purple-glow);color:var(--purple);font-size:13px;font-weight:600;padding:3px 12px;border-radius:4px">หน่วย: ${unit}</span></div>`;
+  }
+
   if (v69 && v68 && v69 !== '–' && v68 !== '–') {
     const h69 = headers[1] || 'ม.ค.–มิ.ย. 2569';
     const h68 = headers[2] || 'ม.ค.–มิ.ย. 2568';
     html += `<div class="modal-comparison">
-      <div class="modal-comp-box box-current"><div class="label">${h69}</div><div class="value current num">${v69} ${unit}</div></div>
-      <div class="modal-comp-box box-prev"><div class="label">${h68}</div><div class="value num">${v68} ${unit}</div></div>
+      <div class="modal-comp-box box-current"><div class="label">${h69}</div><div class="value current num">${v69}</div></div>
+      <div class="modal-comp-box box-prev"><div class="label">${h68}</div><div class="value num">${v68}</div></div>
     </div>`;
   } else if (v69) {
-    html += `<div style="text-align:center;padding:16px 0"><div style="font-size:36px;font-weight:700;color:var(--purple)" class="num">${v69}</div><div style="font-size:15px;color:var(--text-3)">${unit}</div></div>`;
+    html += `<div style="text-align:center;padding:16px 0"><div style="font-size:36px;font-weight:700;color:var(--purple)" class="num">${v69}</div></div>`;
   }
 
-  // Show detail rows
   if (diff || pct) {
     html += '<div style="margin-top:16px">';
-    if (diff && diff !== '–') html += `<div class="modal-row"><span class="modal-row-label">เพิ่ม (ลด)</span><span class="modal-row-value num">${diff} ${unit}</span></div>`;
+    if (diff && diff !== '–') html += `<div class="modal-row"><span class="modal-row-label">เพิ่ม (ลด)</span><span class="modal-row-value num">${diff}</span></div>`;
     if (pct && pct !== '–') {
-      const pctVal = pct.replace(/[^0-9.\-+]/g, '');
-      const improved = pctVal.startsWith('-') || pctVal.startsWith('+');
       html += `<div class="modal-row"><span class="modal-row-label">เปลี่ยนแปลง</span><span class="modal-row-value num">${pct}%</span></div>`;
     }
     html += '</div>';
   }
 
-  // Bar chart
   const parseNum = s => { const n = parseFloat(String(s).replace(/[^0-9.\-]/g, '')); return isNaN(n) ? 0 : n; };
   const n69 = parseNum(v69), n68 = parseNum(v68);
   if (n69 !== 0 || n68 !== 0) {
@@ -1494,7 +1494,6 @@ function openAutoModal(tr) {
 
   modalBody.innerHTML = html;
 
-  // Draw chart
   const mc = document.getElementById('modalChart');
   if (mc && (n69 !== 0 || n68 !== 0)) {
     const ctx = mc.getContext('2d');
@@ -1507,23 +1506,29 @@ function openAutoModal(tr) {
     const gold = getComputedStyle(document.documentElement).getPropertyValue('--gold').trim() || '#c9981a';
     const textCol = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#2a1f3d';
     const maxVal = Math.max(Math.abs(n69), Math.abs(n68)) || 1;
-    const labelW = 100, barAreaW = W - labelW - 80, barH = 22;
-    // 69 bar
+    const labelW = 60, barAreaW = W - labelW - 80, barH = 22;
     ctx.fillStyle = textCol; ctx.font = '13px system-ui,sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
     ctx.fillText('2569', labelW - 8, 25);
     const w69 = Math.abs(n69) / maxVal * barAreaW;
     ctx.fillStyle = purple; ctx.globalAlpha = 0.85;
     ctx.fillRect(labelW, 14, Math.max(w69, 2), barH);
     ctx.globalAlpha = 1; ctx.fillStyle = textCol; ctx.font = 'bold 13px system-ui,sans-serif'; ctx.textAlign = 'left';
-    ctx.fillText(n69.toLocaleString() + ' ' + unit, labelW + w69 + 8, 25);
-    // 68 bar
+    ctx.fillText(n69.toLocaleString(), labelW + w69 + 8, 25);
     ctx.fillStyle = textCol; ctx.font = '13px system-ui,sans-serif'; ctx.textAlign = 'right';
     ctx.fillText('2568', labelW - 8, 65);
     const w68 = Math.abs(n68) / maxVal * barAreaW;
     ctx.fillStyle = gold; ctx.globalAlpha = 0.7;
     ctx.fillRect(labelW, 54, Math.max(w68, 2), barH);
     ctx.globalAlpha = 1; ctx.fillStyle = textCol; ctx.font = 'bold 13px system-ui,sans-serif'; ctx.textAlign = 'left';
-    ctx.fillText(n68.toLocaleString() + ' ' + unit, labelW + w68 + 8, 65);
+    ctx.fillText(n68.toLocaleString(), labelW + w68 + 8, 65);
+    // Legend
+    const legY = H - 18;
+    ctx.fillStyle = purple; ctx.globalAlpha = 0.85; ctx.fillRect(labelW, legY, 14, 12);
+    ctx.globalAlpha = 1; ctx.fillStyle = textCol; ctx.font = 'bold 12px system-ui,sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText('2569', labelW + 18, legY + 9);
+    ctx.fillStyle = gold; ctx.globalAlpha = 0.7; ctx.fillRect(labelW + 65, legY, 14, 12);
+    ctx.globalAlpha = 1; ctx.fillStyle = textCol;
+    ctx.fillText('2568', labelW + 83, legY + 9);
   }
 
   overlay.classList.add('open');
