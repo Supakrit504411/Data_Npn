@@ -1361,12 +1361,20 @@ function openModal(key) {
   }
 
   if (d.change) {
-    const cls = d.improved ? 'improved' : 'declined';
-    const arrow = d.improved ? '&#9650;' : '&#9660;';
-    html += `<div class="modal-change ${cls}">
-      <span class="arrow">${arrow}</span>
-      <span class="detail">${d.change}</span>
-    </div>`;
+    const parseNum = s => { const n = parseFloat(String(s).replace(/[^0-9.\-]/g, '')); return isNaN(n) ? 0 : n; };
+    const n69 = parseNum(d.current), n68 = parseNum(d.prev);
+    const diff = n69 - n68;
+    const pctMatch = d.change.match(/([+-]?[\d.]+%)/);
+    const pctStr = pctMatch ? pctMatch[1] : '';
+    html += '<div style="margin-top:16px">';
+    if (d.current && d.prev) {
+      const diffStr = diff >= 0 ? diff.toLocaleString(undefined, {maximumFractionDigits:2}) : diff.toLocaleString(undefined, {maximumFractionDigits:2});
+      html += `<div class="modal-row"><span class="modal-row-label">เพิ่ม (ลด)</span><span class="modal-row-value num">${diffStr}</span></div>`;
+    }
+    if (pctStr) {
+      html += `<div class="modal-row"><span class="modal-row-label">เปลี่ยนแปลง</span><span class="modal-row-value num">${pctStr}</span></div>`;
+    }
+    html += '</div>';
   }
 
   if (d.note) {
@@ -1486,7 +1494,7 @@ function openAutoModal(tr) {
     html += '<div style="margin-top:16px">';
     if (diff && diff !== '–') html += `<div class="modal-row"><span class="modal-row-label">เพิ่ม (ลด)</span><span class="modal-row-value num">${diff}</span></div>`;
     if (pct && pct !== '–') {
-      html += `<div class="modal-row"><span class="modal-row-label">เปลี่ยนแปลง</span><span class="modal-row-value num">${pct}%</span></div>`;
+      html += `<div class="modal-row"><span class="modal-row-label">เปลี่ยนแปลง</span><span class="modal-row-value num">${pct.includes('%') ? pct : pct + '%'}</span></div>`;
     }
     html += '</div>';
   }
