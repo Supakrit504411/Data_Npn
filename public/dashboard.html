@@ -1335,12 +1335,14 @@ function openModal(key) {
 
   let html = '';
 
-  // Extract unit from current/prev or title
+  // Extract unit from current/prev
   const unitMatch = (d.current || '').match(/(ล้านบาท|ล้านหน่วย|ตร\.กม\.|แห่ง|คน|ราย|หมู่บ้าน|ครั้ง\/ราย\/ปี|นาที\/ราย\/ปี|วงจร-กม\.|kVA|เครื่อง|หน่วย\/ราย|เท่า|%|MW)/);
   const unit = unitMatch ? unitMatch[1] : '';
-  if (unit) {
-    html += `<div style="text-align:right;margin-bottom:8px"><span style="display:inline-block;background:var(--purple-glow);color:var(--purple);font-size:13px;font-weight:600;padding:3px 12px;border-radius:4px">หน่วย: ${unit}</span></div>`;
-  }
+  html += `<div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:8px;flex-wrap:wrap">`;
+  html += `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--purple-glow);color:var(--purple);font-size:13px;font-weight:600;padding:3px 12px;border-radius:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--purple);opacity:0.85"></span>2569</span>`;
+  html += `<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(201,152,26,0.1);color:#8a6d10;font-size:13px;font-weight:600;padding:3px 12px;border-radius:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--gold);opacity:0.7"></span>2568</span>`;
+  if (unit) html += `<span style="display:inline-block;background:var(--purple-glow);color:var(--purple);font-size:13px;font-weight:600;padding:3px 12px;border-radius:4px">หน่วย: ${unit}</span>`;
+  html += `</div>`;
 
   if (d.current && d.prev) {
     html += `<div class="modal-comparison">
@@ -1384,7 +1386,7 @@ function openModal(key) {
   // Bar chart for comparison
   const chartRows = d.rows || (d.current && d.prev ? [[d.title, d.current, d.prev]] : []);
   const barH = 16, gap = 48, startY = 10;
-  const chartH = chartRows.length > 0 ? startY + chartRows.length * gap + 40 : 0;
+  const chartH = chartRows.length > 0 ? startY + chartRows.length * gap + 10 : 0;
   if (chartRows.length > 0) {
     html += '<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">';
     html += '<div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">กราฟเปรียบเทียบ</div>';
@@ -1434,14 +1436,6 @@ function openModal(key) {
       ctx.fillText(p.v68.toLocaleString(), labelW + w68 + 6, y + barH + 3 + barH / 2);
       lastBarBottom = y + barH + 3 + barH;
     });
-    // Legend — always 20px below last bar
-    const legY = lastBarBottom + 20;
-    ctx.fillStyle = purple; ctx.globalAlpha = 0.85; ctx.fillRect(labelW, legY, 14, 12);
-    ctx.globalAlpha = 1; ctx.fillStyle = textCol; ctx.font = 'bold 12px system-ui,sans-serif'; ctx.textAlign = 'left';
-    ctx.fillText('2569', labelW + 18, legY + 9);
-    ctx.fillStyle = gold; ctx.globalAlpha = 0.7; ctx.fillRect(labelW + 65, legY, 14, 12);
-    ctx.globalAlpha = 1; ctx.fillStyle = textCol;
-    ctx.fillText('2568', labelW + 83, legY + 9);
   }
   overlay.classList.add('open');
 }
@@ -1474,10 +1468,12 @@ function openAutoModal(tr) {
 
   let html = '';
 
-  // Unit badge at top-right
-  if (unit) {
-    html += `<div style="text-align:right;margin-bottom:8px"><span style="display:inline-block;background:var(--purple-glow);color:var(--purple);font-size:13px;font-weight:600;padding:3px 12px;border-radius:4px">หน่วย: ${unit}</span></div>`;
-  }
+  // Year legend + unit badge at top-right
+  html += `<div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:8px;flex-wrap:wrap">`;
+  html += `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--purple-glow);color:var(--purple);font-size:13px;font-weight:600;padding:3px 12px;border-radius:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--purple);opacity:0.85"></span>2569</span>`;
+  html += `<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(201,152,26,0.1);color:#8a6d10;font-size:13px;font-weight:600;padding:3px 12px;border-radius:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--gold);opacity:0.7"></span>2568</span>`;
+  if (unit) html += `<span style="display:inline-block;background:var(--purple-glow);color:var(--purple);font-size:13px;font-weight:600;padding:3px 12px;border-radius:4px">หน่วย: ${unit}</span>`;
+  html += `</div>`;
 
   if (v69 && v68 && v69 !== '–' && v68 !== '–') {
     const h69 = headers[1] || 'ม.ค.–มิ.ย. 2569';
@@ -1504,7 +1500,7 @@ function openAutoModal(tr) {
   if (n69 !== 0 || n68 !== 0) {
     html += '<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">';
     html += '<div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">กราฟเปรียบเทียบ</div>';
-    html += '<canvas id="modalChart" width="480" height="140" style="width:100%;max-width:480px"></canvas>';
+    html += '<canvas id="modalChart" width="480" height="100" style="width:100%;max-width:480px"></canvas>';
     html += '</div>';
   }
 
@@ -1537,14 +1533,6 @@ function openAutoModal(tr) {
     ctx.fillRect(labelW, 54, Math.max(w68, 2), barH);
     ctx.globalAlpha = 1; ctx.fillStyle = textCol; ctx.font = 'bold 13px system-ui,sans-serif'; ctx.textAlign = 'left';
     ctx.fillText(n68.toLocaleString(), labelW + w68 + 8, 65);
-    // Legend
-    const legY = H - 18;
-    ctx.fillStyle = purple; ctx.globalAlpha = 0.85; ctx.fillRect(labelW, legY, 14, 12);
-    ctx.globalAlpha = 1; ctx.fillStyle = textCol; ctx.font = 'bold 12px system-ui,sans-serif'; ctx.textAlign = 'left';
-    ctx.fillText('2569', labelW + 18, legY + 9);
-    ctx.fillStyle = gold; ctx.globalAlpha = 0.7; ctx.fillRect(labelW + 65, legY, 14, 12);
-    ctx.globalAlpha = 1; ctx.fillStyle = textCol;
-    ctx.fillText('2568', labelW + 83, legY + 9);
   }
 
   overlay.classList.add('open');

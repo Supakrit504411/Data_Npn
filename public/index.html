@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ข้อมูลสำคัญ กฟจ.นครพนม — เข้าสู่ระบบ</title>
 <style>
-  /* PEA Brand: ขาว 70% ม่วง 20% ทอง 10% */
   :root {
     --bg: #f5f4f8;
     --surface: #ffffff;
@@ -33,84 +32,95 @@
     flex-direction: column;
   }
 
-  /* Hero */
-  .hero {
+  .top-bar {
+    height: 5px;
+    background: linear-gradient(90deg, var(--purple), var(--purple-light) 60%, var(--gold) 100%);
+    flex-shrink: 0;
+  }
+
+  .main-layout {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+
+  /* Left: Hero image */
+  .hero-left {
+    flex: 0 0 62%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f0ecf5 0%, #e8e3f0 50%, #f5f2e8 100%);
+  }
+
+  .hero-left img {
+    width: 92%;
+    max-width: 820px;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 32px rgba(75,46,131,0.12));
+  }
+
+  /* Right: Login */
+  .login-right {
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 40px 24px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  /* Background decoration */
-  .hero::before {
-    content: '';
-    position: absolute;
-    top: -120px; right: -120px;
-    width: 500px; height: 500px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(75,46,131,0.06) 0%, transparent 70%);
-    pointer-events: none;
-  }
-  .hero::after {
-    content: '';
-    position: absolute;
-    bottom: -80px; left: -80px;
-    width: 400px; height: 400px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(201,152,26,0.06) 0%, transparent 70%);
-    pointer-events: none;
-  }
-
-  .hero-card {
-    position: relative; z-index: 1;
+    padding: 40px 36px;
     background: var(--surface);
-    border-radius: 20px;
-    box-shadow: 0 4px 24px rgba(42,31,61,0.08), 0 0 0 1px rgba(75,46,131,0.06);
-    padding: 48px 44px;
-    max-width: 460px;
+    position: relative;
+  }
+
+  .login-right::before {
+    content: '';
+    position: absolute;
+    top: -100px; right: -100px;
+    width: 350px; height: 350px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(75,46,131,0.04) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .login-card {
+    position: relative; z-index: 1;
+    max-width: 380px;
     width: 100%;
     text-align: center;
   }
 
-  /* PEA Logo / Icon */
-  .logo-area {
-    margin-bottom: 28px;
-  }
   .logo-icon {
-    width: 80px; height: 80px;
-    margin: 0 auto 16px;
+    width: 72px; height: 72px;
+    margin: 0 auto 20px;
     background: var(--purple);
-    border-radius: 20px;
+    border-radius: 18px;
     display: flex; align-items: center; justify-content: center;
     box-shadow: 0 4px 16px rgba(75,46,131,0.25);
   }
-  .logo-icon svg { width: 44px; height: 44px; }
+  .logo-icon svg { width: 40px; height: 40px; }
 
   .logo-text {
-    font-size: 14px; font-weight: 600;
+    font-size: 13px; font-weight: 600;
     color: var(--purple);
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
   }
 
   .hero-title {
-    font-size: 32px;
+    font-size: 30px;
     font-weight: 700;
     color: var(--text);
     line-height: 1.3;
     margin-bottom: 8px;
     letter-spacing: -0.02em;
   }
-  .hero-title span {
-    color: var(--purple);
-  }
+  .hero-title span { color: var(--purple); }
 
   .hero-subtitle {
-    font-size: 18px;
+    font-size: 17px;
     color: var(--text-2);
     margin-bottom: 36px;
     line-height: 1.5;
@@ -121,12 +131,11 @@
     color: #fff;
     padding: 3px 14px;
     border-radius: 6px;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
     margin-top: 8px;
   }
 
-  /* LINE Login Button */
   .line-btn {
     display: flex;
     align-items: center;
@@ -151,12 +160,8 @@
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(6,199,85,0.35);
   }
-  .line-btn:active {
-    transform: translateY(0);
-  }
-  .line-btn svg {
-    width: 30px; height: 30px; flex-shrink: 0;
-  }
+  .line-btn:active { transform: translateY(0); }
+  .line-btn svg { width: 30px; height: 30px; flex-shrink: 0; }
 
   .footer-note {
     margin-top: 28px;
@@ -165,26 +170,33 @@
     line-height: 1.6;
   }
 
-  /* Gold accent bar at top */
-  .top-bar {
-    height: 5px;
-    background: linear-gradient(90deg, var(--purple), var(--purple-light) 60%, var(--gold) 100%);
-  }
-
-  /* Bottom footer */
   .page-footer {
-    padding: 16px 24px;
+    padding: 12px 24px;
     text-align: center;
     font-size: 13px;
     color: var(--text-3);
     border-top: 1px solid rgba(75,46,131,0.06);
+    background: var(--surface);
+    flex-shrink: 0;
   }
 
-  @media (max-width: 520px) {
-    .hero-card { padding: 36px 24px; }
+  @media (max-width: 860px) {
+    .main-layout { flex-direction: column; }
+    .hero-left {
+      flex: none;
+      height: 280px;
+      min-height: 200px;
+    }
+    .hero-left img { width: 85%; max-width: 500px; }
+    .login-right { padding: 32px 24px; }
     .hero-title { font-size: 26px; }
-    .hero-subtitle { font-size: 16px; }
+    .hero-subtitle { font-size: 15px; margin-bottom: 28px; }
     .line-btn { font-size: 18px; padding: 14px 20px; }
+  }
+
+  @media (max-width: 480px) {
+    .hero-left { height: 220px; }
+    .login-card { max-width: 100%; }
   }
 </style>
 </head>
@@ -192,37 +204,39 @@
 
 <div class="top-bar"></div>
 
-<div class="hero">
-  <div class="hero-card">
-    <div class="logo-area">
+<div class="main-layout">
+  <div class="hero-left">
+    <img src="hero-bg.png" alt="PEA ข้อมูลสำคัญ กฟจ.นครพนม">
+  </div>
+
+  <div class="login-right">
+    <div class="login-card">
       <div class="logo-icon">
-        <!-- Lightning bolt icon -->
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M13 2L4.5 13.5H12L11 22L19.5 10.5H12L13 2Z" fill="#daa520" stroke="#daa520" stroke-width="1" stroke-linejoin="round"/>
         </svg>
       </div>
       <div class="logo-text">Provincial Electricity Authority</div>
-    </div>
 
-    <h1 class="hero-title">ข้อมูลสำคัญ<br><span>กฟจ.นครพนม</span></h1>
-    <p class="hero-subtitle">
-      ระบบรายงานผลดำเนินงาน
-      <br>
-      <span class="period">**</span>
-    </p>
+      <h1 class="hero-title">ข้อมูลสำคัญ<br><span>กฟจ.นครพนม</span></h1>
+      <p class="hero-subtitle">
+        ระบบรายงานผลดำเนินงาน
+        <br>
+        <span class="period">ม.ค.–มิ.ย. 2569</span>
+      </p>
 
-    <a class="line-btn" href="#" id="lineLoginBtn">
-      <!-- LINE Logo -->
-      <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-        <path d="M20 4C11.16 4 4 9.94 4 17.2c0 6.52 5.78 11.98 13.58 13.02.53.11 1.25.35 1.43.8.16.41.11 1.05.05 1.46l-.23 1.38c-.07.41-.33 1.6 1.4.87 1.73-.73 9.34-5.5 12.74-9.42C35.72 22.16 36 19.78 36 17.2 36 9.94 28.84 4 20 4z" fill="#fff"/>
-        <path d="M16.5 14.5h-1a.5.5 0 00-.5.5v5a.5.5 0 00.5.5h3a.5.5 0 00.5-.5v-1a.5.5 0 00-.5-.5H17v-3.5a.5.5 0 00-.5-.5zm8.5 0h-3a.5.5 0 00-.5.5v5a.5.5 0 00.5.5h3a.5.5 0 00.5-.5v-1a.5.5 0 00-.5-.5H23v-.5h2a.5.5 0 00.5-.5v-1a.5.5 0 00-.5-.5h-2V16h2a.5.5 0 00.5-.5v-1a.5.5 0 00-.5-.5zm-6 0h-1a.5.5 0 00-.5.5v5a.5.5 0 00.5.5h1a.5.5 0 00.5-.5v-5a.5.5 0 00-.5-.5zm-6 0h-1a.5.5 0 00-.5.5v5a.5.5 0 00.5.5h1a.5.5 0 00.5-.5v-2l2 2.3a.5.5 0 00.38.2h.12a.5.5 0 00.5-.5v-5a.5.5 0 00-.5-.5h-1a.5.5 0 00-.5.5v2l-2-2.3a.5.5 0 00-.38-.2z" fill="#06c755"/>
-      </svg>
-      เข้าสู่ระบบด้วย LINE
-    </a>
+      <a class="line-btn" href="#" id="lineLoginBtn">
+        <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 4C11.16 4 4 9.94 4 17.2c0 6.52 5.78 11.98 13.58 13.02.53.11 1.25.35 1.43.8.16.41.11 1.05.05 1.46l-.23 1.38c-.07.41-.33 1.6 1.4.87 1.73-.73 9.34-5.5 12.74-9.42C35.72 22.16 36 19.78 36 17.2 36 9.94 28.84 4 20 4z" fill="#fff"/>
+          <path d="M16.5 14.5h-1a.5.5 0 00-.5.5v5a.5.5 0 00.5.5h3a.5.5 0 00.5-.5v-1a.5.5 0 00-.5-.5H17v-3.5a.5.5 0 00-.5-.5zm8.5 0h-3a.5.5 0 00-.5.5v5a.5.5 0 00.5.5h3a.5.5 0 00.5-.5v-1a.5.5 0 00-.5-.5H23v-.5h2a.5.5 0 00.5-.5v-1a.5.5 0 00-.5-.5h-2V16h2a.5.5 0 00.5-.5v-1a.5.5 0 00-.5-.5zm-6 0h-1a.5.5 0 00-.5.5v5a.5.5 0 00.5.5h1a.5.5 0 00.5-.5v-5a.5.5 0 00-.5-.5zm-6 0h-1a.5.5 0 00-.5.5v5a.5.5 0 00.5.5h1a.5.5 0 00.5-.5v-2l2 2.3a.5.5 0 00.38.2h.12a.5.5 0 00.5-.5v-5a.5.5 0 00-.5-.5h-1a.5.5 0 00-.5.5v2l-2-2.3a.5.5 0 00-.38-.2z" fill="#06c755"/>
+        </svg>
+        เข้าสู่ระบบด้วย LINE
+      </a>
 
-    <div class="footer-note">
-      เข้าสู่ระบบด้วยบัญชี LINE เพื่อดูข้อมูล<br>
-      ต้องได้รับอนุมัติสิทธิ์จากผู้ดูแลระบบก่อนจึงจะเข้าถึงได้
+      <div class="footer-note">
+        เข้าสู่ระบบด้วยบัญชี LINE เพื่อดูข้อมูล<br>
+        ต้องได้รับอนุมัติสิทธิ์จากผู้ดูแลระบบก่อนจึงจะเข้าถึงได้
+      </div>
     </div>
   </div>
 </div>
@@ -232,15 +246,13 @@
 </div>
 
 <script>
-  // ============ CONFIG ============
   const LINE_CHANNEL_ID = '2010908089';
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxSirjVsql5WRJ8VkXabZwXcFXZXpquI-yIHHzB8VIuBakpCvH4_9_dRUTiUX_KLimVTg/exec'; // <-- ใส่ URL จาก Google Apps Script ที่นี่
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxSirjVsql5WRJ8VkXabZwXcFXZXpquI-yIHHzB8VIuBakpCvH4_9_dRUTiUX_KLimVTg/exec';
   const REDIRECT_URI = window.location.origin + '/callback.html';
   const STATE = Math.random().toString(36).substring(2);
 
   document.getElementById('lineLoginBtn').addEventListener('click', function(e) {
     e.preventDefault();
-
     const url = 'https://access.line.me/oauth2/v2.1/authorize?' + new URLSearchParams({
       response_type: 'code',
       client_id: LINE_CHANNEL_ID,
@@ -249,7 +261,6 @@
       scope: 'profile openid',
       bot_prompt: 'normal'
     }).toString();
-
     sessionStorage.setItem('line_state', STATE);
     localStorage.setItem('apps_script_url', APPS_SCRIPT_URL);
     window.location.href = url;
