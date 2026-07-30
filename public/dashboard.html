@@ -1386,11 +1386,11 @@ function openModal(key) {
   // Bar chart for comparison
   const chartRows = d.rows || (d.current && d.prev ? [[d.title, d.current, d.prev]] : []);
   const barH = 16, gap = 48, startY = 10;
-  const chartH = chartRows.length > 0 ? startY + chartRows.length * gap + 10 : 0;
+  const chartH = Math.max(120, chartRows.length > 0 ? startY + chartRows.length * gap + 10 : 0);
   if (chartRows.length > 0) {
     html += '<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">';
     html += '<div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">กราฟเปรียบเทียบ</div>';
-    html += '<canvas id="modalChart" width="480" height="' + Math.max(120, chartH) + '" style="width:100%;max-width:480px"></canvas>';
+    html += `<canvas id="modalChart" style="width:100%;max-width:480px;display:block;height:${chartH}px"></canvas>`;
     html += '</div>';
   }
 
@@ -1402,7 +1402,7 @@ function openModal(key) {
     const ctx = mc.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
     mc.width = mc.offsetWidth * dpr;
-    mc.height = mc.offsetHeight * dpr;
+    mc.height = chartH * dpr;
     ctx.scale(dpr, dpr);
     const W = mc.offsetWidth;
     const parseNum = s => { const n = parseFloat(String(s).replace(/[^0-9.\-]/g, '')); return isNaN(n) ? 0 : n; };
@@ -1500,7 +1500,7 @@ function openAutoModal(tr) {
   if (n69 !== 0 || n68 !== 0) {
     html += '<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">';
     html += '<div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">กราฟเปรียบเทียบ</div>';
-    html += '<canvas id="modalChart" width="480" height="100" style="width:100%;max-width:480px"></canvas>';
+    html += '<canvas id="modalChart" style="width:100%;max-width:480px;display:block;height:100px"></canvas>';
     html += '</div>';
   }
 
@@ -1510,10 +1510,11 @@ function openAutoModal(tr) {
   if (mc && (n69 !== 0 || n68 !== 0)) {
     const ctx = mc.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
+    const autoH = 100;
     mc.width = mc.offsetWidth * dpr;
-    mc.height = mc.offsetHeight * dpr;
+    mc.height = autoH * dpr;
     ctx.scale(dpr, dpr);
-    const W = mc.offsetWidth, H = mc.offsetHeight;
+    const W = mc.offsetWidth, H = autoH;
     const purple = getComputedStyle(document.documentElement).getPropertyValue('--purple').trim() || '#4b2e83';
     const gold = getComputedStyle(document.documentElement).getPropertyValue('--gold').trim() || '#c9981a';
     const textCol = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#2a1f3d';
