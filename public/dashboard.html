@@ -375,6 +375,23 @@
   }
   .modal-close:hover { background: var(--negative-bg); color: var(--negative); }
 
+  .modal-nav {
+    display: flex; gap: 6px; align-items: center;
+  }
+  .modal-nav-btn {
+    width: 36px; height: 36px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface-alt);
+    color: var(--text-2); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+  }
+  .modal-nav-btn:hover:not(:disabled) { background: var(--purple-glow); color: var(--purple); border-color: var(--purple); }
+  .modal-nav-btn:disabled { opacity: 0.3; cursor: default; }
+  .modal-nav-counter {
+    font-size: 12px; color: var(--text-3); white-space: nowrap; min-width: 40px; text-align: center;
+  }
+
   .modal-body { padding: 20px 24px 24px; }
 
   .modal-row {
@@ -540,7 +557,12 @@
   <div class="modal" id="modal">
     <div class="modal-header">
       <h2 id="modalTitle"></h2>
-      <button class="modal-close" id="modalClose">&times;</button>
+      <div class="modal-nav">
+        <button class="modal-nav-btn" id="modalPrev" title="ก่อนหน้า">&#8249;</button>
+        <span class="modal-nav-counter" id="modalCounter"></span>
+        <button class="modal-nav-btn" id="modalNext" title="ถัดไป">&#8250;</button>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
     </div>
     <div class="modal-body" id="modalBody"></div>
   </div>
@@ -1328,7 +1350,7 @@ const modal = document.getElementById('modal');
 const modalTitle = document.getElementById('modalTitle');
 const modalBody = document.getElementById('modalBody');
 
-function openModal(key) {
+function openModal(key, skipBuild) {
   const d = M[key];
   if (!d) return;
   modalTitle.textContent = d.title;
@@ -1437,19 +1459,83 @@ function openModal(key) {
       lastBarBottom = y + barH + 3 + barH;
     });
   }
+  updateModalNav();
   overlay.classList.add('open');
 }
 
 function closeModal() {
   overlay.classList.remove('open');
+  modalList = [];
+  modalIndex = -1;
 }
 
+let modalList = [];
+let modalIndex = -1;
+
+function updateModalNav() {
+  const prev = document.getElementById('modalPrev');
+  const next = document.getElementById('modalNext');
+  const counter = document.getElementById('modalCounter');
+  if (modalList.length <= 1) {
+    prev.style.display = 'none';
+    next.style.display = 'none';
+    counter.style.display = 'none';
+  } else {
+    prev.style.display = '';
+    next.style.display = '';
+    counter.style.display = '';
+    prev.disabled = modalIndex <= 0;
+    next.disabled = modalIndex >= modalList.length - 1;
+    counter.textContent = (modalIndex + 1) + '/' + modalList.length;
+  }
+}
+
+function navigateModal(dir) {
+  const newIdx = modalIndex + dir;
+  if (newIdx < 0 || newIdx >= modalList.length) return;
+  modalIndex = newIdx;
+  const item = modalList[modalIndex];
+  if (item.type === 'key') {
+    openModal(item.key, true);
+  } else {
+    openAutoModal(item.tr, true);
+  }
+}
+
+function buildModalList(sourceEl) {
+  modalList = [];
+  const section = sourceEl.closest('.section') || document.querySelector('.section.active');
+  if (!section) return;
+
+  const items = section.querySelectorAll('[data-modal], tbody tr:not(.ft-group):not(.total)');
+  items.forEach(el => {
+    const key = el.dataset && el.dataset.modal;
+    if (key && M[key]) {
+      if (!modalList.some(m => m.type === 'key' && m.key === key)) {
+        modalList.push({ type: 'key', key, el });
+      }
+    } else if (el.tagName === 'TR') {
+      const cells = el.querySelectorAll('td');
+      if (cells.length >= 2 && cells[1].textContent.trim()) {
+        modalList.push({ type: 'tr', tr: el, el });
+      }
+    }
+  });
+}
+
+document.getElementById('modalPrev').addEventListener('click', () => navigateModal(-1));
+document.getElementById('modalNext').addEventListener('click', () => navigateModal(1));
 document.getElementById('modalClose').addEventListener('click', closeModal);
 overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if (!overlay.classList.contains('open')) return;
+  if (e.key === 'ArrowLeft') navigateModal(-1);
+  if (e.key === 'ArrowRight') navigateModal(1);
+});
 
 // Auto-generate modal from a table row's cells
-function openAutoModal(tr) {
+function openAutoModal(tr, skipBuild) {
   const cells = tr.querySelectorAll('td');
   if (cells.length < 2) return;
   const label = cells[0].textContent.trim();
@@ -1536,22 +1622,30 @@ function openAutoModal(tr) {
     ctx.fillText(n68.toLocaleString(), labelW + w68 + 8, 65);
   }
 
+  if (!skipBuild) updateModalNav();
   overlay.classList.add('open');
 }
 
 // Click delegation for cards, ov-cards, table rows, bar rows
 document.addEventListener('click', e => {
-  // First check data-modal with M entry
   const el = e.target.closest('[data-modal]');
   if (el) {
     const key = el.dataset.modal;
-    if (M[key]) { openModal(key); return; }
+    if (M[key]) {
+      buildModalList(el);
+      modalIndex = modalList.findIndex(m => m.type === 'key' && m.key === key);
+      if (modalIndex < 0) modalIndex = 0;
+      openModal(key);
+      return;
+    }
   }
-  // Auto-modal for any table row (not group/sub-header-only)
   const tr = e.target.closest('tr');
   if (tr && !tr.classList.contains('ft-group')) {
     const cells = tr.querySelectorAll('td');
     if (cells.length >= 2 && cells[1].textContent.trim()) {
+      buildModalList(tr);
+      modalIndex = modalList.findIndex(m => m.type === 'tr' && m.tr === tr);
+      if (modalIndex < 0) modalIndex = 0;
       openAutoModal(tr);
     }
   }
