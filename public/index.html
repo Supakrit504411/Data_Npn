@@ -261,7 +261,7 @@
       scope: 'profile openid',
       bot_prompt: 'normal'
     }).toString();
-    sessionStorage.setItem('line_state', STATE);
+    localStorage.setItem('line_state', STATE);
     localStorage.setItem('apps_script_url', APPS_SCRIPT_URL);
     window.location.href = url;
   });

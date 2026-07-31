@@ -71,7 +71,7 @@
   const params = new URLSearchParams(window.location.search);
   const code = params.get('code');
   const state = params.get('state');
-  const savedState = sessionStorage.getItem('line_state');
+  const savedState = localStorage.getItem('line_state');
   const error = params.get('error');
 
   function showError(msg) {
