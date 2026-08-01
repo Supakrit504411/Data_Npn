@@ -1145,8 +1145,192 @@
   }
 })();
 
+// ============ DYNAMIC DATA FROM GOOGLE SHEET ============
+var SHEET_CACHE_KEY = 'pea_sheet_cache';
+
+function fetchSheetData(onDone) {
+  var url = localStorage.getItem('apps_script_url');
+  if (!url || url === 'YOUR_APPS_SCRIPT_URL') { if (onDone) onDone(false); return; }
+  fetch(url + '?action=getData')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.status === 'ok' && data.rows && data.rows.length > 0) {
+        localStorage.setItem(SHEET_CACHE_KEY, JSON.stringify(data));
+        applySheetData(data);
+        if (onDone) onDone(true, data);
+      } else { if (onDone) onDone(false); }
+    })
+    .catch(function() { if (onDone) onDone(false); });
+}
+
+function applySheetData(data) {
+  if (!data || !data.rows || data.rows.length === 0) return;
+
+  var lookup = new Map();
+  data.rows.forEach(function(row) {
+    var label = String(row[0] || '').trim();
+    if (!label) return;
+    lookup.set(label, row);
+    var m = label.match(/^(\d+(?:\.\d+)*)/);
+    if (m) lookup.set('#' + m[1], row);
+  });
+
+  function findRow(label) {
+    var norm = label.trim();
+    if (lookup.has(norm)) return lookup.get(norm);
+    var m = norm.match(/^(\d+(?:\.\d+)*)/);
+    if (m && lookup.has('#' + m[1])) return lookup.get('#' + m[1]);
+    var found = null;
+    lookup.forEach(function(v, k) {
+      if (found || k.charAt(0) === '#') return;
+      if (norm.length > 3 && k.includes(norm)) found = v;
+      else if (k.length > 3 && norm.includes(k)) found = v;
+    });
+    return found;
+  }
+
+  function fmt(v) {
+    if (v === null || v === undefined || v === '') return '–';
+    if (typeof v === 'number') {
+      if (v !== v) return '–';
+      return v.toLocaleString('en-US', { maximumFractionDigits: 3 });
+    }
+    return String(v);
+  }
+
+  function getColMap(table) {
+    var ths = table.querySelectorAll('thead th');
+    var map = [0];
+    for (var i = 1; i < ths.length; i++) {
+      var t = ths[i].textContent.trim().toLowerCase();
+      if (t.includes('69') || t.includes('2569')) map.push(1);
+      else if (t.includes('68') || t.includes('2568')) map.push(2);
+      else if (t.includes('เพิ่ม') && t.includes('ลด')) map.push(3);
+      else if (t === '%') map.push(4);
+      else if (t.includes('เปลี่ยนแปลง')) map.push(4);
+      else if (t.includes('หน่วย')) map.push(5);
+      else map.push(i);
+    }
+    return map;
+  }
+
+  // 1) Update all table cells
+  document.querySelectorAll('table').forEach(function(table) {
+    var colMap = getColMap(table);
+    table.querySelectorAll('tbody tr').forEach(function(tr) {
+      if (tr.classList.contains('ft-group')) return;
+      var cells = tr.querySelectorAll('td');
+      if (cells.length < 2) return;
+      var label = cells[0].textContent.trim();
+      if (!label || label === 'รวม') return;
+      var row = findRow(label);
+      if (!row) return;
+
+      for (var i = 1; i < cells.length; i++) {
+        var si = i < colMap.length ? colMap[i] : i;
+        if (si >= row.length) continue;
+        var val = row[si];
+        if (val === undefined || val === null) continue;
+        var text = fmt(val);
+
+        var pill = cells[i].querySelector('.change-pill');
+        var cs = cells[i].querySelector('.change-pos, .change-neg');
+        if (pill) {
+          pill.textContent = text;
+          pill.classList.remove('pos', 'neg', 'zero');
+          var n = parseFloat(String(val));
+          pill.classList.add(isNaN(n) ? 'zero' : n > 0 ? 'pos' : n < 0 ? 'neg' : 'zero');
+        } else if (cs) {
+          cs.textContent = (si === 4 && typeof val === 'number') ? text + '%' : text;
+          var n2 = parseFloat(String(val));
+          cs.className = (!isNaN(n2) && n2 >= 0) ? 'change-pos num' : 'change-neg num';
+        } else {
+          var wasNum = cells[i].classList.contains('num');
+          cells[i].textContent = text;
+          if (wasNum) cells[i].classList.add('num');
+        }
+      }
+    });
+  });
+
+  // 2) Update overview cards
+  var cardMap = {
+    'ov-customers': '#1.4', 'ov-staff': '#1.3', 'ov-profit': '#3.8',
+    'ov-saifi': '#5.1.3', 'ov-saidi': '#5.2.3',
+    'area-sqkm': '#1.2', 'area-village': '#1.6'
+  };
+  var cardLabelMap = {
+    'ov-revenue': 'รวม รายได้จากการจำหน่ายกระแสไฟฟ้า',
+    'ov-loss': 'ร้อยละหน่วยสูญเสียในระบบ'
+  };
+
+  function getRowForCard(key) {
+    if (cardMap[key]) return lookup.get(cardMap[key]);
+    if (cardLabelMap[key]) {
+      var lbl = cardLabelMap[key], found = null;
+      lookup.forEach(function(v, k) {
+        if (found || k.charAt(0) === '#') return;
+        if (k.includes(lbl)) found = v;
+      });
+      return found;
+    }
+    return null;
+  }
+
+  var allCardKeys = Object.keys(cardMap).concat(Object.keys(cardLabelMap));
+  allCardKeys.forEach(function(key) {
+    var row = getRowForCard(key);
+    if (!row) return;
+    document.querySelectorAll('[data-modal="' + key + '"]').forEach(function(el) {
+      var ovNum = el.querySelector('.ov-num');
+      var cardVal = el.querySelector('.card-value');
+      if (ovNum) ovNum.textContent = fmt(row[1]);
+      if (cardVal) {
+        var unitEl = cardVal.querySelector('.unit');
+        var unitText = unitEl ? unitEl.textContent : '';
+        if (unitText) cardVal.innerHTML = fmt(row[1]) + ' <span class="unit">' + unitText + '</span>';
+        else cardVal.textContent = fmt(row[1]);
+      }
+    });
+  });
+
+  // 3) Update M object for modals
+  allCardKeys.forEach(function(key) {
+    if (!M[key]) return;
+    var row = getRowForCard(key);
+    if (!row) return;
+    var unit = row[5] || '';
+    if (M[key].current !== undefined) {
+      M[key].current = fmt(row[1]) + (unit ? ' ' + unit : '');
+      M[key].prev = fmt(row[2]) + (unit ? ' ' + unit : '');
+    }
+  });
+
+  // 4) Show last updated timestamp
+  var tsEl = document.getElementById('sheetTimestamp');
+  if (!tsEl && data.lastUpdated) {
+    tsEl = document.createElement('div');
+    tsEl.id = 'sheetTimestamp';
+    tsEl.style.cssText = 'text-align:center;font-size:12px;color:var(--text-3);padding:6px 0 0';
+    var contentDiv = document.getElementById('content');
+    if (contentDiv && contentDiv.nextElementSibling) {
+      contentDiv.nextElementSibling.insertBefore(tsEl, contentDiv.nextElementSibling.firstChild);
+    }
+  }
+  if (tsEl && data.lastUpdated) {
+    tsEl.textContent = 'ข้อมูลจาก Google Sheet อัปเดตล่าสุด: ' + data.lastUpdated;
+  }
+}
+
+// Auto-load: use cached data first, then fetch fresh
+(function() {
+  var cached = localStorage.getItem(SHEET_CACHE_KEY);
+  if (cached) { try { applySheetData(JSON.parse(cached)); } catch(e) {} }
+  fetchSheetData();
+})();
+
 // ============ MODAL DATA ============
-const M = {
+let M = {
   'ov-customers': {
     title: 'ผู้ใช้ไฟฟ้า',
     rows: [
@@ -1770,26 +1954,19 @@ document.getElementById('btnLogout').addEventListener('click', function() {
 });
 
 document.getElementById('btnReload').addEventListener('click', function() {
-  const btn = this;
+  var btn = this;
   btn.disabled = true;
   btn.style.opacity = '0.5';
-  const APPS_URL = localStorage.getItem('apps_script_url');
-  if (!APPS_URL || APPS_URL === 'YOUR_APPS_SCRIPT_URL') {
-    window.location.reload();
-    return;
-  }
-  fetch(APPS_URL + '?action=getData')
-    .then(r => r.json())
-    .then(data => {
-      if (data.status === 'ok' && data.rows) {
-        alert('โหลดข้อมูลจาก Google Sheet สำเร็จ\nอัปเดตล่าสุด: ' + data.lastUpdated + '\nจำนวนแถว: ' + data.rows.length);
-        window.location.reload();
-      } else {
-        window.location.reload();
-      }
-    })
-    .catch(() => {
-      window.location.reload();
-    });
+  btn.textContent = 'กำลังโหลด...';
+  fetchSheetData(function(success, data) {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> โหลดใหม่';
+    if (success && data) {
+      alert('โหลดข้อมูลจาก Google Sheet สำเร็จ\nอัปเดตล่าสุด: ' + data.lastUpdated + '\nจำนวนแถว: ' + data.rows.length);
+    } else {
+      alert('ไม่สามารถโหลดข้อมูลได้ กรุณาตรวจสอบ URL ของ Apps Script');
+    }
+  });
 });
 </script>
