@@ -1166,6 +1166,24 @@ function fetchSheetData(onDone) {
 function applySheetData(data) {
   if (!data || !data.rows || data.rows.length === 0) return;
 
+  // Detect sheet column indices from headers
+  var SC = { val69: -1, val68: -1, diff: -1, pct: -1, unit: -1 };
+  if (data.headers) {
+    for (var hi = 1; hi < data.headers.length; hi++) {
+      var h = String(data.headers[hi]).trim().toLowerCase();
+      if (SC.val69 === -1 && (h.includes('69') || h.includes('2569'))) SC.val69 = hi;
+      else if (SC.val68 === -1 && (h.includes('68') || h.includes('2568'))) SC.val68 = hi;
+      else if (SC.diff === -1 && (h.includes('เพิ่ม') || h.includes('ลด'))) SC.diff = hi;
+      else if (SC.pct === -1 && (h === '%' || h.includes('ร้อยละ') || h.includes('%'))) SC.pct = hi;
+      else if (SC.unit === -1 && h.includes('หน่วย')) SC.unit = hi;
+    }
+  }
+  if (SC.val69 === -1) SC.val69 = 1;
+  if (SC.val68 === -1) SC.val68 = 2;
+  if (SC.diff === -1) SC.diff = 3;
+  if (SC.pct === -1) SC.pct = 4;
+  if (SC.unit === -1) SC.unit = 5;
+
   var lookup = new Map();
   data.rows.forEach(function(row) {
     var label = String(row[0] || '').trim();
@@ -1203,13 +1221,13 @@ function applySheetData(data) {
     var map = [0];
     for (var i = 1; i < ths.length; i++) {
       var t = ths[i].textContent.trim().toLowerCase();
-      if (t.includes('69') || t.includes('2569')) map.push(1);
-      else if (t.includes('68') || t.includes('2568')) map.push(2);
-      else if (t.includes('เพิ่ม') && t.includes('ลด')) map.push(3);
-      else if (t === '%') map.push(4);
-      else if (t.includes('เปลี่ยนแปลง')) map.push(4);
-      else if (t.includes('หน่วย')) map.push(5);
-      else map.push(i);
+      if (t.includes('69') || t.includes('2569')) map.push(SC.val69);
+      else if (t.includes('68') || t.includes('2568')) map.push(SC.val68);
+      else if (t.includes('เพิ่ม') && t.includes('ลด')) map.push(SC.diff);
+      else if (t === '%') map.push(SC.pct);
+      else if (t.includes('เปลี่ยนแปลง')) map.push(SC.pct);
+      else if (t.includes('หน่วย')) map.push(SC.unit);
+      else map.push(-1);
     }
     return map;
   }
@@ -1227,8 +1245,8 @@ function applySheetData(data) {
       if (!row) return;
 
       for (var i = 1; i < cells.length; i++) {
-        var si = i < colMap.length ? colMap[i] : i;
-        if (si >= row.length) continue;
+        var si = i < colMap.length ? colMap[i] : -1;
+        if (si < 0 || si >= row.length) continue;
         var val = row[si];
         if (val === undefined || val === null) continue;
         var text = fmt(val);
@@ -1241,7 +1259,7 @@ function applySheetData(data) {
           var n = parseFloat(String(val));
           pill.classList.add(isNaN(n) ? 'zero' : n > 0 ? 'pos' : n < 0 ? 'neg' : 'zero');
         } else if (cs) {
-          cs.textContent = (si === 4 && typeof val === 'number') ? text + '%' : text;
+          cs.textContent = (si === SC.pct && typeof val === 'number') ? text + '%' : text;
           var n2 = parseFloat(String(val));
           cs.className = (!isNaN(n2) && n2 >= 0) ? 'change-pos num' : 'change-neg num';
         } else {
@@ -1284,12 +1302,12 @@ function applySheetData(data) {
     document.querySelectorAll('[data-modal="' + key + '"]').forEach(function(el) {
       var ovNum = el.querySelector('.ov-num');
       var cardVal = el.querySelector('.card-value');
-      if (ovNum) ovNum.textContent = fmt(row[1]);
+      if (ovNum) ovNum.textContent = fmt(row[SC.val69]);
       if (cardVal) {
         var unitEl = cardVal.querySelector('.unit');
         var unitText = unitEl ? unitEl.textContent : '';
-        if (unitText) cardVal.innerHTML = fmt(row[1]) + ' <span class="unit">' + unitText + '</span>';
-        else cardVal.textContent = fmt(row[1]);
+        if (unitText) cardVal.innerHTML = fmt(row[SC.val69]) + ' <span class="unit">' + unitText + '</span>';
+        else cardVal.textContent = fmt(row[SC.val69]);
       }
     });
   });
@@ -1299,10 +1317,10 @@ function applySheetData(data) {
     if (!M[key]) return;
     var row = getRowForCard(key);
     if (!row) return;
-    var unit = row[5] || '';
+    var unit = SC.unit >= 0 && SC.unit < row.length ? (row[SC.unit] || '') : '';
     if (M[key].current !== undefined) {
-      M[key].current = fmt(row[1]) + (unit ? ' ' + unit : '');
-      M[key].prev = fmt(row[2]) + (unit ? ' ' + unit : '');
+      M[key].current = fmt(row[SC.val69]) + (unit ? ' ' + unit : '');
+      M[key].prev = fmt(row[SC.val68]) + (unit ? ' ' + unit : '');
     }
   });
 
