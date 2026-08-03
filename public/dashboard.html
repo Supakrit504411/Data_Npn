@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ข้อมูลสำคัญ กฟจ.นครพนม สะสม ม.ค.–มิ.ย. 69 vs ม.ค.–มิ.ย. 68</title>
 <style>
   @font-face {
@@ -1163,6 +1165,44 @@ function fetchSheetData(onDone) {
     .catch(function() { if (onDone) onDone(false); });
 }
 
+// ---- Value helpers (shared) ----
+function shCleanLabel(s) {
+  return String(s == null ? '' : s).replace(/\t/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function shIsErr(v) {
+  if (v === null || v === undefined || v === '') return true;
+  if (typeof v === 'string') {
+    var t = v.trim();
+    if (t === '' || t === '-' || t === '–' || t.charAt(0) === '#') return true;
+  }
+  if (typeof v === 'number' && v !== v) return true;
+  return false;
+}
+function shNum(v) {
+  if (shIsErr(v)) return null;
+  if (typeof v === 'number') return v;
+  var n = parseFloat(String(v).replace(/,/g, ''));
+  return isNaN(n) ? null : n;
+}
+// Transform raw sheet value to display value based on unit
+// col: 'val' | 'diff'
+function shTransform(v, unit, col) {
+  var n = shNum(v);
+  if (n === null) return null;
+  var u = String(unit || '').trim().normalize('NFC');
+  if (u === 'ล้านหน่วย'.normalize('NFC') && Math.abs(n) >= 1000) n = n / 1000000;      // raw units -> millions
+  else if (u === '%' && col === 'val' && n !== 0 && Math.abs(n) <= 1) n = n * 100; // fraction -> percent
+  return n;
+}
+function shFmtNum(n) {
+  if (n === null) return '–';
+  return n.toLocaleString('en-US', { maximumFractionDigits: 3 });
+}
+function shEsc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function applySheetData(data) {
   if (!data || !data.rows || data.rows.length === 0) return;
 
@@ -1178,42 +1218,102 @@ function applySheetData(data) {
       else if (SC.unit === -1 && h.includes('หน่วย')) SC.unit = hi;
     }
   }
-  if (SC.val69 === -1) SC.val69 = 1;
-  if (SC.val68 === -1) SC.val68 = 2;
-  if (SC.diff === -1) SC.diff = 3;
-  if (SC.pct === -1) SC.pct = 4;
-  if (SC.unit === -1) SC.unit = 5;
+  if (SC.val69 === -1) SC.val69 = 2;
+  if (SC.val68 === -1) SC.val68 = 3;
+  if (SC.diff === -1) SC.diff = 4;
+  if (SC.pct === -1) SC.pct = 5;
+  if (SC.unit === -1) SC.unit = 6;
+
+  // Ordered list of sheet rows with cleaned labels
+  var srows = data.rows.map(function(row) {
+    return { label: shCleanLabel(row[0]), raw: row };
+  }).filter(function(r) { return r.label !== ''; });
 
   var lookup = new Map();
-  data.rows.forEach(function(row) {
-    var label = String(row[0] || '').trim();
-    if (!label) return;
-    lookup.set(label, row);
-    var m = label.match(/^(\d+(?:\.\d+)*)/);
-    if (m) lookup.set('#' + m[1], row);
+  srows.forEach(function(r) {
+    if (!lookup.has(r.label)) lookup.set(r.label, r.raw);
+    var m = r.label.match(/^(\d+(?:\.\d+)*)/);
+    if (m && !lookup.has('#' + m[1])) lookup.set('#' + m[1], r.raw);
   });
 
-  function findRow(label) {
-    var norm = label.trim();
-    if (lookup.has(norm)) return lookup.get(norm);
-    var m = norm.match(/^(\d+(?:\.\d+)*)/);
-    if (m && lookup.has('#' + m[1])) return lookup.get('#' + m[1]);
-    var found = null;
-    lookup.forEach(function(v, k) {
-      if (found || k.charAt(0) === '#') return;
-      if (norm.length > 3 && k.includes(norm)) found = v;
-      else if (k.length > 3 && norm.includes(k)) found = v;
-    });
-    return found;
+  // Build a comparison cell (value/diff/pct) for a sheet raw row
+  function cellVal(row, unit) { return shFmtNum(shTransform(row[SC.val69], unit, 'val')); }
+  function cellPrev(row, unit) { return shFmtNum(shTransform(row[SC.val68], unit, 'val')); }
+  function cellDiff(row, unit) {
+    var nd = shTransform(row[SC.diff], unit, 'diff');
+    return (nd === null || nd === 0) ? '–' : shFmtNum(nd);
+  }
+  function pctParts(row) {
+    var np = shNum(row[SC.pct]);
+    if (np === null) return { cls: 'zero', txt: '–' };
+    if (np === 0) return { cls: 'zero', txt: '0' };
+    return { cls: np > 0 ? 'pos' : 'neg', txt: (np > 0 ? '+' : '') + np.toFixed(2) };
   }
 
-  function fmt(v) {
-    if (v === null || v === undefined || v === '') return '–';
-    if (typeof v === 'number') {
-      if (v !== v) return '–';
-      return v.toLocaleString('en-US', { maximumFractionDigits: 3 });
+  // ============ 1) Render full-data table (tab 10) dynamically ============
+  var ftBody = document.querySelector('.full-table tbody');
+  if (ftBody) {
+    var html = '';
+    srows.forEach(function(r) {
+      var label = r.label, row = r.raw;
+      var unit = SC.unit >= 0 ? shCleanLabel(row[SC.unit]) : '';
+      var v69 = row[SC.val69], v68 = row[SC.val68], dv = row[SC.diff], pv = row[SC.pct];
+      var allEmpty = shIsErr(v69) && shIsErr(v68) && shIsErr(dv) && shIsErr(pv);
+      var m = label.match(/^(\d+(?:\.\d+)*)/);
+      var num = m ? m[1] : '';
+      var dots = num ? (num.split('.').length - 1) : 0;
+      var isTotal = /^รวม/.test(label);
+
+      if (isTotal) {
+        var p = pctParts(row);
+        html += '<tr class="ft-total"><td>' + shEsc(label) + '</td>' +
+          '<td class="num">' + cellVal(row, unit) + '</td>' +
+          '<td class="num">' + cellPrev(row, unit) + '</td>' +
+          '<td class="num">' + cellDiff(row, unit) + '</td>' +
+          '<td class="num"><span class="change-pill ' + p.cls + '">' + p.txt + '</span></td>' +
+          '<td>' + shEsc(unit) + '</td></tr>';
+      } else if (allEmpty) {
+        if (num && dots === 0) {
+          html += '<tr class="ft-group"><td colspan="6">' + shEsc(label) + '</td></tr>';
+        } else {
+          var hcls = dots >= 2 ? 'ft-sub2' : 'ft-sub';
+          html += '<tr class="' + hcls + '"><td>' + shEsc(label) + '</td><td colspan="5"></td></tr>';
+        }
+      } else {
+        var cls = dots >= 2 ? 'ft-sub2' : (dots === 1 ? 'ft-sub' : (num ? 'ft-sub' : 'ft-sub2'));
+        var pp = pctParts(row);
+        html += '<tr class="' + cls + '"><td>' + shEsc(label) + '</td>' +
+          '<td class="num">' + cellVal(row, unit) + '</td>' +
+          '<td class="num">' + cellPrev(row, unit) + '</td>' +
+          '<td class="num">' + cellDiff(row, unit) + '</td>' +
+          '<td class="num"><span class="change-pill ' + pp.cls + '">' + pp.txt + '</span></td>' +
+          '<td>' + shEsc(unit) + '</td></tr>';
+      }
+    });
+    ftBody.innerHTML = html;
+  }
+
+  // ============ 2) Overwrite the curated tables (tabs 3,4,7,8,9) ============
+  // Positional matching: walk each table's rows in order against sheet order,
+  // so duplicate "รวม" totals map to the correct section.
+  function findSheetIdx(htmlLabel, startIdx) {
+    var norm = shCleanLabel(htmlLabel);
+    if (!norm) return -1;
+    var i;
+    for (i = Math.max(0, startIdx); i < srows.length; i++) if (srows[i].label === norm) return i;
+    var m = norm.match(/^(\d+(?:\.\d+)*)/);
+    if (m) for (i = Math.max(0, startIdx); i < srows.length; i++) {
+      var mm = srows[i].label.match(/^(\d+(?:\.\d+)*)/);
+      if (mm && mm[1] === m[1]) return i;
     }
-    return String(v);
+    if (/^รวม/.test(norm)) for (i = Math.max(0, startIdx); i < srows.length; i++)
+      if (/^รวม/.test(srows[i].label)) return i;
+    for (i = 0; i < srows.length; i++) {
+      var k = srows[i].label;
+      if (norm.length > 3 && k.indexOf(norm) >= 0) return i;
+      if (k.length > 3 && norm.indexOf(k) >= 0) return i;
+    }
+    return -1;
   }
 
   function getColMap(table) {
@@ -1232,46 +1332,46 @@ function applySheetData(data) {
     return map;
   }
 
-  // 1) Update all table cells
-  document.querySelectorAll('table').forEach(function(table) {
+  document.querySelectorAll('table:not(.full-table)').forEach(function(table) {
     var colMap = getColMap(table);
+    var ptr = -1;
     table.querySelectorAll('tbody tr').forEach(function(tr) {
-      if (tr.classList.contains('ft-group')) return;
       var cells = tr.querySelectorAll('td');
-      if (cells.length < 2) return;
-      var label = cells[0].textContent.trim();
-      if (!label || label === 'รวม') return;
-      var row = findRow(label);
-      if (!row) return;
+      if (cells.length !== colMap.length) return; // skip colspan/section rows
+      var idx = findSheetIdx(cells[0].textContent, ptr + 1);
+      if (idx < 0) return;
+      ptr = idx;
+      var row = srows[idx].raw;
+      var unit = SC.unit >= 0 ? shCleanLabel(row[SC.unit]) : '';
 
       for (var i = 1; i < cells.length; i++) {
-        var si = i < colMap.length ? colMap[i] : -1;
+        var si = colMap[i];
         if (si < 0 || si >= row.length) continue;
-        var val = row[si];
-        if (val === undefined || val === null) continue;
-        var text = fmt(val);
+        if (si === SC.unit) { cells[i].textContent = shCleanLabel(row[si]); continue; }
+        var text, isPct = (si === SC.pct);
+        if (isPct) text = pctParts(row).txt;
+        else if (si === SC.diff) text = cellDiff(row, unit);
+        else text = shFmtNum(shTransform(row[si], unit, 'val'));
 
         var pill = cells[i].querySelector('.change-pill');
         var cs = cells[i].querySelector('.change-pos, .change-neg');
         if (pill) {
-          pill.textContent = text;
+          var pp = pctParts(row);
+          pill.textContent = pp.txt;
           pill.classList.remove('pos', 'neg', 'zero');
-          var n = parseFloat(String(val));
-          pill.classList.add(isNaN(n) ? 'zero' : n > 0 ? 'pos' : n < 0 ? 'neg' : 'zero');
+          pill.classList.add(pp.cls);
         } else if (cs) {
-          cs.textContent = (si === SC.pct && typeof val === 'number') ? text + '%' : text;
-          var n2 = parseFloat(String(val));
-          cs.className = (!isNaN(n2) && n2 >= 0) ? 'change-pos num' : 'change-neg num';
+          cs.textContent = isPct ? (pctParts(row).txt + '%') : text;
+          var np = shNum(row[SC.pct]);
+          cs.className = (isPct ? (np !== null && np >= 0) : (shNum(row[si]) || 0) >= 0) ? 'change-pos num' : 'change-neg num';
         } else {
-          var wasNum = cells[i].classList.contains('num');
           cells[i].textContent = text;
-          if (wasNum) cells[i].classList.add('num');
         }
       }
     });
   });
 
-  // 2) Update overview cards
+  // ============ 3) Update overview / summary cards ============
   var cardMap = {
     'ov-customers': '#1.4', 'ov-staff': '#1.3', 'ov-profit': '#3.8',
     'ov-saifi': '#5.1.3', 'ov-saidi': '#5.2.3',
@@ -1295,36 +1395,46 @@ function applySheetData(data) {
     return null;
   }
 
+  function shFmtCard(n) {
+    if (n === null) return '–';
+    return n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  }
   var allCardKeys = Object.keys(cardMap).concat(Object.keys(cardLabelMap));
   allCardKeys.forEach(function(key) {
     var row = getRowForCard(key);
     if (!row) return;
+    var unit = SC.unit >= 0 ? shCleanLabel(row[SC.unit]) : '';
+    var valTxt = shFmtCard(shTransform(row[SC.val69], unit, 'val'));
     document.querySelectorAll('[data-modal="' + key + '"]').forEach(function(el) {
       var ovNum = el.querySelector('.ov-num');
       var cardVal = el.querySelector('.card-value');
-      if (ovNum) ovNum.textContent = fmt(row[SC.val69]);
+      if (ovNum) {
+        var suffix = ovNum.querySelector('span'); // preserve inline "%" etc.
+        ovNum.textContent = valTxt;
+        if (suffix) ovNum.appendChild(suffix);
+      }
       if (cardVal) {
         var unitEl = cardVal.querySelector('.unit');
         var unitText = unitEl ? unitEl.textContent : '';
-        if (unitText) cardVal.innerHTML = fmt(row[SC.val69]) + ' <span class="unit">' + unitText + '</span>';
-        else cardVal.textContent = fmt(row[SC.val69]);
+        if (unitText) cardVal.innerHTML = valTxt + ' <span class="unit">' + shEsc(unitText) + '</span>';
+        else cardVal.textContent = valTxt;
       }
     });
   });
 
-  // 3) Update M object for modals
+  // Update M object for modals
   allCardKeys.forEach(function(key) {
     if (!M[key]) return;
     var row = getRowForCard(key);
     if (!row) return;
-    var unit = SC.unit >= 0 && SC.unit < row.length ? (row[SC.unit] || '') : '';
+    var unit = SC.unit >= 0 ? shCleanLabel(row[SC.unit]) : '';
     if (M[key].current !== undefined) {
-      M[key].current = fmt(row[SC.val69]) + (unit ? ' ' + unit : '');
-      M[key].prev = fmt(row[SC.val68]) + (unit ? ' ' + unit : '');
+      M[key].current = shFmtCard(shTransform(row[SC.val69], unit, 'val')) + (unit ? ' ' + unit : '');
+      M[key].prev = shFmtCard(shTransform(row[SC.val68], unit, 'val')) + (unit ? ' ' + unit : '');
     }
   });
 
-  // 4) Show last updated timestamp
+  // ============ 4) Show last updated timestamp ============
   var tsEl = document.getElementById('sheetTimestamp');
   if (!tsEl && data.lastUpdated) {
     tsEl = document.createElement('div');
