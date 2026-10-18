@@ -1224,6 +1224,29 @@ function applySheetData(data) {
   if (SC.pct === -1) SC.pct = 5;
   if (SC.unit === -1) SC.unit = 6;
 
+  // Update period labels (header badge, titles, th, modal) from sheet headers
+  (function() {
+    var hdrs = data.headers || [];
+    var norm = function(s) { return String(s || '').trim().replace(/\s+/g, ' ').replace(/[-–—]/g, '–'); };
+    var h69 = norm(hdrs[SC.val69]), h68 = norm(hdrs[SC.val68]);
+    var rangeOf = function(h) { return h.replace(/\s*(25)?\d{2}\s*$/, '').trim(); };
+    var r69 = rangeOf(h69), r68 = rangeOf(h68);
+    if (!r69 || !r68) return;
+    window.PERIOD = { cur: r69 + ' 2569', prev: r68 + ' 2568' };
+    var re = /ม\.ค\.\s*[–-]\s*[^\s]+\s*(25)?(69|68)/g;
+    var fix = function(s) {
+      return s.replace(re, function(m, p, y) {
+        return (y === '69' ? r69 : r68) + (p ? ' 25' : ' ') + y;
+      });
+    };
+    document.title = fix(document.title);
+    var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    var n;
+    while ((n = walker.nextNode())) {
+      if (n.nodeValue.indexOf('ม.ค.') >= 0) n.nodeValue = fix(n.nodeValue);
+    }
+  })();
+
   // Ordered list of sheet rows with cleaned labels
   var srows = data.rows.map(function(row) {
     return { label: shCleanLabel(row[0]), raw: row };
@@ -1680,8 +1703,8 @@ function openModal(key, skipBuild) {
 
   if (d.current && d.prev) {
     html += `<div class="modal-comparison">
-      <div class="modal-comp-box box-current"><div class="label">ม.ค.–มิ.ย. 2569</div><div class="value current num">${d.current}</div></div>
-      <div class="modal-comp-box box-prev"><div class="label">ม.ค.–มิ.ย. 2568</div><div class="value num">${d.prev}</div></div>
+      <div class="modal-comp-box box-current"><div class="label">${(window.PERIOD||{}).cur || 'ม.ค.–มิ.ย. 2569'}</div><div class="value current num">${d.current}</div></div>
+      <div class="modal-comp-box box-prev"><div class="label">${(window.PERIOD||{}).prev || 'ม.ค.–มิ.ย. 2568'}</div><div class="value num">${d.prev}</div></div>
     </div>`;
   }
 
