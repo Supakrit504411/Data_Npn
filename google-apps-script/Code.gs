@@ -20,7 +20,7 @@ function doPost(e) {
       return handleCheck(body.userId);
     }
     if (action === 'getData') {
-      return handleGetData();
+      return handleGetData(body.sheet);
     }
 
     return jsonResponse({ error: 'unknown action' });
@@ -32,18 +32,21 @@ function doPost(e) {
 function doGet(e) {
   const action = e && e.parameter && e.parameter.action;
   if (action === 'getData') {
-    return handleGetData();
+    return handleGetData(e.parameter.sheet);
   }
   return jsonResponse({ status: 'ok', message: 'LINE User Management API' });
 }
 
-// --- GET DATA: อ่านข้อมูลจากชีต "2026" ---
-function handleGetData() {
+// --- GET DATA: อ่านข้อมูลจากชีต (ค่าเริ่มต้น "2026") ---
+const ALLOWED_SHEETS = ['2026', 'เสริมการเงิน'];
+
+function handleGetData(sheetName) {
   try {
+    const name = ALLOWED_SHEETS.indexOf(sheetName) >= 0 ? sheetName : '2026';
     const ss = SpreadsheetApp.openById('13n2T_ZH7K-av4hRa1Q1iHLoyn-GV-XeeQ9m3mxUnT_8');
-    const sheet = ss.getSheetByName('2026');
+    const sheet = ss.getSheetByName(name);
     if (!sheet) {
-      return jsonResponse({ status: 'error', error: 'Sheet "2026" not found' });
+      return jsonResponse({ status: 'error', error: 'Sheet "' + name + '" not found' });
     }
 
     const values = sheet.getDataRange().getValues();
@@ -52,7 +55,7 @@ function handleGetData() {
 
     return jsonResponse({
       status: 'ok',
-      sheetName: '2026',
+      sheetName: name,
       lastUpdated: Utilities.formatDate(new Date(), 'Asia/Bangkok', 'yyyy-MM-dd HH:mm:ss'),
       headers: headers,
       data: rows,
