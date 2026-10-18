@@ -31,6 +31,7 @@
     plus: svg('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'),
     pdf: svg('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'),
     full: svg('<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>'),
+    unfull: svg('<path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>'),
     exit: svg('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>')
   };
 
@@ -236,10 +237,16 @@
       if (opts.onExit) opts.onExit(back);
       if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
     }
+    // leaving fullscreen with the bar button only shrinks the window; it must not end the presentation
+    let manualFsExit = false;
     function toggleFull() {
       const el = opts.fullscreenEl || document.documentElement;
-      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      if (document.fullscreenElement) { manualFsExit = true; document.exitFullscreen().catch(() => { manualFsExit = false; }); }
       else if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+    }
+    function updFullBtn() {
+      const on = !!document.fullscreenElement, b = B('full');
+      b.innerHTML = on ? IC.unfull : IC.full; b.title = on ? 'ออกจากเต็มจอ (F)' : 'เต็มจอ (F)';
     }
 
     // fade the bar while the presenter is not moving the mouse
@@ -268,7 +275,13 @@
       else if (e.key === 'Escape') { if (!document.fullscreenElement) exit(); }
     });
     // leaving fullscreen with Esc exits presentation too
-    document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && active && opts.exitWithFullscreen) exit(); });
+    document.addEventListener('fullscreenchange', () => {
+      updFullBtn();
+      if (!document.fullscreenElement) {
+        if (manualFsExit) { manualFsExit = false; return; }
+        if (active && opts.exitWithFullscreen) exit();
+      }
+    });
 
     // ---------- insert panel ----------
     const groupOf = () => { const sl = cur(); if (!sl) return 0; return sl.kind === 'main' ? sl.i : EXTRA.find(x => x.id === sl.id).at; };
