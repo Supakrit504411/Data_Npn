@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>if (sessionStorage.getItem('line_logged_in') !== 'true') location.replace('index.html');</script>
+<script>if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');</script>
 <title>งบกำไรขาดทุน กฟจ. — ปี 2569 เทียบ 2568</title>
 <style>
   :root {
@@ -175,6 +176,9 @@
 
   @media (max-width:820px){ .kpis{grid-template-columns:repeat(2,1fr);} .brand h1{font-size:17px;} }
   @media (max-width:480px){ .kpis{grid-template-columns:1fr;} main,header.app{padding-left:15px;padding-right:15px;} td,th{padding:10px 12px;} }
+  /* Embedded in dashboard tab */
+  html.embed .top-bar, html.embed header.app, html.embed footer { display: none; }
+  html.embed main { padding-top: 6px; }
 </style>
 </head>
 <body>

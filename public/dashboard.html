@@ -579,6 +579,7 @@
     <button class="tab" data-i="8">ลูกหนี้</button>
     <button class="tab" data-i="9">พัสดุ</button>
     <button class="tab" data-i="10">ข้อมูลทั้งหมด</button>
+    <button class="tab" data-i="11">การเงินละเอียด</button>
   </div>
 </div>
 
@@ -1154,6 +1155,11 @@
         </tbody>
       </table>
     </div>
+  </div>
+
+  <!-- 11: Detailed finance (embedded finance.html, loaded on first open) -->
+  <div class="section" data-s="11">
+    <iframe id="finFrame" title="งบกำไรขาดทุนละเอียด" style="width:100%;height:calc(100vh - 190px);min-height:520px;border:0;border-radius:12px;background:transparent"></iframe>
   </div>
 
 </div>
@@ -2032,6 +2038,10 @@ function showSection(i) {
   sections[i].classList.add('active');
   tabs[i].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   if (i === 5) setTimeout(drawReliabilityChart, 100);
+  if (i === 11) {
+    const f = document.getElementById('finFrame');
+    if (f && !f.getAttribute('src')) f.setAttribute('src', 'finance.html?embed=1');
+  }
 }
 
 tabs.forEach(t => t.addEventListener('click', () => showSection(+t.dataset.i)));
