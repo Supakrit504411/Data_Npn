@@ -529,80 +529,13 @@
   body.present .header h1 { font-size: 32px; }
   body.present .tab { font-size: 18px; padding: 12px 22px; }
   body.present .content { zoom: 1.2; padding-bottom: 90px; }
-  .present-bar {
-    display: none; position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
-    z-index: 300; align-items: center; gap: 12px; padding: 8px 14px;
-    background: rgba(35,25,60,0.92); color: #fff; border-radius: 999px;
-    box-shadow: 0 6px 24px rgba(0,0,0,0.3); font-size: 15px; font-weight: 600;
-  }
-  body.present .present-bar { display: flex; }
-  .present-bar button {
-    border: none; background: rgba(255,255,255,0.15); color: #fff; font: inherit;
-    padding: 6px 16px; border-radius: 999px; cursor: pointer;
-  }
-  .present-bar button:hover { background: rgba(255,255,255,0.3); }
-  .present-bar button:disabled { opacity: 0.35; cursor: default; }
-  .present-bar { white-space: nowrap; max-width: calc(100vw - 24px); flex-wrap: wrap; justify-content: center; }
-  .present-bar .sep { width: 1px; height: 22px; background: rgba(255,255,255,0.25); }
-  @media (max-width: 760px) {
-    .present-bar { gap: 6px; padding: 6px 8px; font-size: 13px; border-radius: 16px; }
-    .present-bar button { padding: 5px 10px; }
-    .present-bar .sep { display: none; }
-  }
-  .present-bar button.has { background: #c9981a; color: #2a1f3d; }
-
-  /* Inserted slides */
-  #insView { display: none; }
-  #insView.active { display: block; }
-  #insView h2 { font-size: 26px; color: var(--purple); margin: 4px 0 16px; text-align: center; }
-  #insView .ins-body { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-  #insView img { max-width: 100%; max-height: calc(100vh - 260px); border-radius: 10px; box-shadow: 0 6px 24px rgba(0,0,0,0.12); background: #fff; }
-  #insView iframe { width: 100%; height: calc(100vh - 280px); border: 0; border-radius: 10px; background: #fff; }
-  #insView .open { color: var(--purple); font-weight: 600; }
-  /* .content is zoomed 1.2x while presenting — keep inserted media inside the screen */
-  body.present #insView img { max-height: calc((100vh - 240px) / 1.2); }
-  body.present #insView iframe { height: calc((100vh - 260px) / 1.2); }
-
-  #insModal { position: fixed; inset: 0; z-index: 400; background: rgba(30,20,50,0.55); display: none; align-items: center; justify-content: center; padding: 16px; }
-  #insModal.show { display: flex; }
-  .im-box { background: #fff; color: #2a1f3d; width: 100%; max-width: 620px; max-height: 92vh; overflow: auto; border-radius: 16px; box-shadow: 0 24px 70px rgba(0,0,0,0.35); }
-  .im-head { display: flex; justify-content: space-between; align-items: flex-start; padding: 18px 20px 8px; }
-  .im-head h3 { font-size: 20px; color: var(--purple); }
-  .im-head p { font-size: 13px; color: #8d84a2; margin-top: 2px; }
-  .im-body { padding: 4px 20px 12px; display: grid; gap: 10px; }
-  .im-box input[type=text] { width: 100%; padding: 9px 12px; border: 1.5px solid #e9e5f0; border-radius: 9px; font: inherit; font-size: 14px; }
-  .im-box button { font: inherit; cursor: pointer; }
-  .im-x { border: 1px solid #e9e5f0; background: #faf9fc; width: 34px; height: 34px; border-radius: 9px; }
-  .im-pos, .im-tabs { display: flex; gap: 12px; align-items: center; font-size: 14px; flex-wrap: wrap; }
-  .im-tabs button { border: 1.5px solid #e9e5f0; background: #faf9fc; padding: 7px 14px; border-radius: 999px; font-size: 14px; }
-  .im-tabs button.on { background: var(--purple); color: #fff; border-color: var(--purple); }
-  .im-drop { display: block; text-align: center; padding: 18px; border: 2px dashed #cfc5e0; border-radius: 12px; color: var(--purple); font-weight: 600; cursor: pointer; }
-  .im-tip { font-size: 12.5px; color: #8d84a2; }
-  .im-row { display: flex; gap: 8px; }
-  .im-row button, .im-foot button { border: none; background: var(--purple); color: #fff; padding: 8px 16px; border-radius: 9px; white-space: nowrap; }
-  .im-err { display: none; color: #bf3030; background: #fdeeee; padding: 8px 12px; border-radius: 8px; font-size: 13px; }
-  .im-lh { font-size: 13px; font-weight: 700; color: #5a4e6e; margin-top: 4px; }
-  .im-item { display: flex; align-items: center; gap: 8px; padding: 6px; border: 1px solid #e9e5f0; border-radius: 10px; margin-bottom: 6px; }
-  .im-item .n { width: 22px; text-align: center; font-weight: 700; color: #8d84a2; }
-  .im-item .t { width: 64px; height: 40px; border-radius: 6px; background: #f2ecfb center/cover no-repeat; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--purple); }
-  .im-item .m { flex: 1; min-width: 0; font-size: 13px; }
-  .im-item .m b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .im-item .m small { color: #8d84a2; }
-  .im-item button { border: 1px solid #e9e5f0; background: #faf9fc; padding: 4px 8px; border-radius: 7px; font-size: 12.5px; }
-  .im-item button.del { color: #bf3030; }
-  .im-item button:disabled { opacity: .35; }
-  .im-empty { font-size: 13px; color: #8d84a2; padding: 8px; }
-  .im-foot { display: flex; justify-content: space-between; gap: 8px; padding: 12px 20px 18px; border-top: 1px solid #e9e5f0; flex-wrap: wrap; }
-  .im-foot .ghost { background: #faf9fc; color: #5a4e6e; border: 1px solid #e9e5f0; }
-
-  /* Print / PDF export */
-  .print-ins { display: none; }
+  /* inserted slide sits inside .content (zoomed 1.2x while presenting) */
+  body.present #insView img { max-height: calc((100vh - 230px) / 1.2); }
+  body.present #insView iframe { height: calc((100vh - 250px) / 1.2); }
   @media print {
-    body.printing .header, body.printing .present-bar, body.printing .page-footer, body.printing #insView, body.printing #insModal { display: none !important; }
-    body.printing .content { zoom: 1 !important; padding: 0 !important; }
-    body.printing .section, body.printing .print-ins { display: block !important; break-after: page; page-break-after: always; }
-    body.printing .print-ins h2 { font-size: 22px; color: #4b2e83; margin-bottom: 12px; }
-    body.printing .print-ins img { max-width: 100%; max-height: 90vh; }
+    body.pk-printing .header, body.pk-printing .page-footer { display: none !important; }
+    body.pk-printing .content { zoom: 1 !important; padding: 0 !important; }
+    body.pk-printing .section { display: block !important; break-after: page; page-break-after: always; }
   }
 </style>
 
@@ -645,44 +578,7 @@
   </div>
 </div>
 
-<div class="present-bar" id="presentBar">
-  <button id="pPrev">&#8249; ก่อนหน้า</button>
-  <span id="pLabel"></span>
-  <button id="pNext">ถัดไป &#8250;</button>
-  <span class="sep"></span>
-  <button id="pIns" title="แทรกหน้าก่อน/หลังหน้านี้ (I)">＋ แทรกหน้า</button>
-  <button id="pPdf" title="บันทึกทุกหน้า (รวมหน้าที่แทรก) เป็น PDF ไว้ใช้กรณีฉุกเฉิน">⤓ PDF</button>
-  <button id="pExit">ออก (Esc)</button>
-</div>
 
-<div id="insModal"><div class="im-box">
-  <div class="im-head"><div><h3>แทรกหน้า</h3><p id="imSub"></p></div><button type="button" class="im-x" id="imX">✕</button></div>
-  <div class="im-body">
-    <div class="im-pos"><span>ตำแหน่ง:</span><label><input type="radio" name="impos" value="after" checked> ต่อจากหน้านี้</label><label><input type="radio" name="impos" value="before"> ก่อนหน้านี้</label></div>
-    <div class="im-tabs"><button type="button" data-tab="image" class="on">รูปภาพ / สไลด์</button><button type="button" data-tab="embed">ลิงก์เว็บ / YouTube</button></div>
-    <input type="text" id="imTitle" placeholder="หัวข้อ (ไม่บังคับ)">
-    <div id="imImage">
-      <label class="im-drop">เลือกไฟล์รูปภาพ (เลือกได้หลายไฟล์)<input type="file" id="imFile" accept="image/*" multiple hidden></label>
-      <div class="im-tip">หรือกด <kbd>Ctrl</kbd>+<kbd>V</kbd> เพื่อวางรูปที่ copy มา (เช่น จาก PowerPoint / Canva / หน้าจอ)</div>
-      <div class="im-row" style="margin-top:8px"><input type="text" id="imImgUrl" placeholder="หรือวางลิงก์รูปภาพ (URL)"><button type="button" class="im-add" data-kind="image">เพิ่ม</button></div>
-    </div>
-    <div id="imEmbed" style="display:none">
-      <div class="im-row"><input type="text" id="imWebUrl" placeholder="วางลิงก์เว็บไซต์ หรือ YouTube"><button type="button" class="im-add" data-kind="embed">เพิ่ม</button></div>
-      <div class="im-tip" style="margin-top:6px">บางเว็บไม่อนุญาตให้ฝัง ถ้าหน้าว่างให้ใช้ลิงก์ "เปิดในแท็บใหม่" บนสไลด์</div>
-    </div>
-    <div class="im-err" id="imErr"></div>
-    <div class="im-lh">หน้าที่แทรกในช่วงนี้ (<span id="imCount">0</span>)</div>
-    <div id="imList"></div>
-  </div>
-  <div class="im-foot">
-    <span>
-      <button type="button" class="ghost" id="imExport" title="สำรองหน้าที่แทรกทั้งหมดเป็นไฟล์ .json">⤓ สำรอง (.json)</button>
-      <button type="button" class="ghost" id="imImport" title="นำเข้าหน้าที่แทรกจากไฟล์ .json">⤒ นำเข้า</button>
-      <input type="file" id="imImportFile" accept=".json,application/json" hidden>
-    </span>
-    <button type="button" id="imDone">เสร็จสิ้น</button>
-  </div>
-</div></div>
 
 <!-- MODAL -->
 <div class="modal-overlay" id="modalOverlay">
@@ -1266,6 +1162,7 @@
   <div style="margin-top:2px;">การไฟฟ้าส่วนภูมิภาค จังหวัดนครพนม &copy; 2569</div>
 </div>
 
+<script src="present-kit.js"></script>
 <script>
 // ============ AUTH GUARD ============
 (function() {
@@ -2149,208 +2046,32 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowLeft' && current > 0) showSection(current - 1);
 });
 
-// ============ PRESENTATION MODE (+ inserted slides per LINE user) ============
-(function() {
-  const $ = id => document.getElementById(id);
-  const label = $('pLabel'), prev = $('pPrev'), next = $('pNext'), insView = $('insView');
-  const isPresent = () => document.body.classList.contains('present');
-
-  // --- storage: IndexedDB on this browser, one record per LINE user ---
-  const KEY = 'u:' + (sessionStorage.getItem('line_user_id') || 'guest');
-  const XDB = {
-    open() { return new Promise((res, rej) => { const r = indexedDB.open('dataNpnPres', 1);
-      r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); },
-    async get() { try { const db = await this.open(); return await new Promise(res => { const q = db.transaction('kv').objectStore('kv').get(KEY);
-      q.onsuccess = () => res(q.result); q.onerror = () => res(undefined); }); } catch (e) { return undefined; } },
-    async set(v) { try { const db = await this.open(); await new Promise((res, rej) => { const tx = db.transaction('kv', 'readwrite');
-      tx.objectStore('kv').put(v, KEY); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); }
-      catch (e) { showErr('บันทึกไม่สำเร็จ (พื้นที่เบราว์เซอร์อาจเต็ม) — หน้าที่แทรกยังใช้ได้จนกว่าจะปิดหน้า'); } }
-  };
-  // item: { id, at: tab index it follows (-1 = before first tab), type: 'image'|'embed', src, title }
-  let EXTRA = [];
-  const newId = () => 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  const escH = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const ytId = u => { const m = String(u).match(/(?:youtu\.be\/|[?&]v=|shorts\/|embed\/)([\w-]{11})/); return m ? m[1] : null; };
-  const save = () => { XDB.set(EXTRA); updInsBtn(); if ($('insModal').classList.contains('show')) renderIns(); };
-
-  // --- sequence: inserts before first tab, then each tab followed by its inserts ---
-  function SEQ() {
-    const L = EXTRA.filter(x => x.at === -1).map(x => ({ kind: 'ins', id: x.id }));
-    tabs.forEach((t, i) => { L.push({ kind: 'main', i }); EXTRA.filter(x => x.at === i).forEach(x => L.push({ kind: 'ins', id: x.id })); });
-    return L;
-  }
-  let pos = 0;
-  const curSlide = () => SEQ()[pos];
-  const titleOf = sl => sl.kind === 'main' ? tabs[sl.i].textContent.trim() : ((EXTRA.find(x => x.id === sl.id) || {}).title || 'หน้าแทรก');
-
-  function renderInsert(it) {
-    let body;
-    if (it.type === 'image') body = '<img src="' + escH(it.src) + '" alt="">';
-    else { const y = ytId(it.src);
-      body = (y ? '<iframe src="https://www.youtube.com/embed/' + y + '" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>'
-                : '<iframe src="' + escH(it.src) + '" referrerpolicy="no-referrer"></iframe>')
-        + '<a class="open" href="' + escH(it.src) + '" target="_blank" rel="noopener">เปิดในแท็บใหม่ ↗</a>'; }
-    insView.innerHTML = (it.title ? '<h2>' + escH(it.title) + '</h2>' : '') + '<div class="ins-body">' + body + '</div>';
-  }
-  function hideInsert() { insView.classList.remove('active'); insView.innerHTML = ''; }
-  function show(p) {
-    const L = SEQ(); pos = Math.max(0, Math.min(L.length - 1, p));
-    const sl = L[pos];
-    if (sl.kind === 'main') { hideInsert(); showSection(sl.i); }
-    else {
-      const it = EXTRA.find(x => x.id === sl.id);
-      sections.forEach(s => s.classList.remove('active'));
-      tabs.forEach(t => t.classList.remove('active')); if (it.at >= 0) tabs[it.at].classList.add('active');
-      renderInsert(it); insView.classList.add('active');
-    }
-    label.textContent = titleOf(sl) + '  ' + (pos + 1) + '/' + L.length;
-    prev.disabled = pos === 0; next.disabled = pos === L.length - 1;
-    updInsBtn(); window.scrollTo(0, 0);
-  }
-  const go = d => show(pos + d);
-  const mainPos = i => SEQ().findIndex(x => x.kind === 'main' && x.i === i);
-  function enter() {
+// ============ PRESENTATION MODE (shared PresentKit: inserted slides per LINE user, PDF) ============
+const PK = PresentKit.create({
+  deck: 'dashboard',
+  count: () => tabs.length,
+  title: i => tabs[i].textContent.trim(),
+  showMain: i => showSection(i),
+  hideMain: at => {
+    sections.forEach(s => s.classList.remove('active'));
+    tabs.forEach(t => t.classList.remove('active'));
+    if (at >= 0) tabs[at].classList.add('active');   // keep the tab it follows highlighted
+  },
+  container: document.getElementById('insView'),
+  mainEl: i => sections[i],
+  onEnter: () => {
     document.body.classList.add('present');
-    show(Math.max(0, mainPos([...tabs].findIndex(t => t.classList.contains('active')))));
     const el = document.documentElement;
     if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
-  }
-  function exit() {
-    document.body.classList.remove('present'); closeIns();
-    const sl = curSlide();
-    if (sl && sl.kind === 'ins') { const it = EXTRA.find(x => x.id === sl.id); hideInsert(); showSection(it && it.at >= 0 ? it.at : 0); }
-    if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen();
-  }
-  $('btnPresent').addEventListener('click', enter);
-  $('pExit').addEventListener('click', exit);
-  prev.addEventListener('click', () => go(-1));
-  next.addEventListener('click', () => go(1));
-  tabs.forEach((t, i) => t.addEventListener('click', () => { if (isPresent()) show(mainPos(i)); }));
-  document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && isPresent()) exit(); });
-  document.addEventListener('keydown', e => {
-    if (!isPresent() || overlay.classList.contains('open')) return;
-    if ($('insModal').classList.contains('show')) { if (e.key === 'Escape') closeIns(); return; }
-    if (e.target.closest && e.target.closest('input,textarea')) return;
-    if (['ArrowRight', 'PageDown', ' '].includes(e.key)) { go(1); e.preventDefault(); }
-    else if (['ArrowLeft', 'PageUp'].includes(e.key)) { go(-1); e.preventDefault(); }
-    else if (e.key === 'i' || e.key === 'I') openIns();
-    else if (e.key === 'Escape') exit();
-  });
-
-  // --- insert panel ---
-  const groupOf = () => { const sl = curSlide(); if (!sl) return 0; return sl.kind === 'main' ? sl.i : EXTRA.find(x => x.id === sl.id).at; };
-  const groupTitle = g => g === -1 ? 'ก่อนหน้าแรก' : 'ต่อจาก ' + tabs[g].textContent.trim();
-  function updInsBtn() { const n = EXTRA.filter(x => x.at === groupOf()).length;
-    $('pIns').textContent = '＋ แทรกหน้า' + (n ? ' (' + n + ')' : ''); $('pIns').classList.toggle('has', n > 0); }
-  function showErr(m) { const e = $('imErr'); e.textContent = m || ''; e.style.display = m ? 'block' : 'none'; }
-  function openIns() { $('insModal').classList.add('show'); showErr(''); renderIns(); }
-  function closeIns() { $('insModal').classList.remove('show'); }
-  function renderIns() {
-    const g = groupOf(), list = EXTRA.filter(x => x.at === g);
-    $('imSub').textContent = 'หน้าปัจจุบัน: ' + titleOf(curSlide()) + ' · ช่วง: ' + groupTitle(g)
-      + ' · บันทึกในเครื่องนี้ของ ' + (sessionStorage.getItem('line_display_name') || 'ผู้ใช้');
-    $('imCount').textContent = list.length;
-    $('imList').innerHTML = list.length ? list.map((it, k) => '<div class="im-item" data-id="' + it.id + '"><span class="n">' + (k + 1) + '</span>'
-      + (it.type === 'image' ? '<div class="t" style="background-image:url(\'' + escH(it.src) + '\')"></div>' : '<div class="t">' + (ytId(it.src) ? 'YouTube' : 'เว็บ') + '</div>')
-      + '<div class="m"><b>' + escH(it.title || (it.type === 'image' ? 'รูปภาพ' : it.src)) + '</b><small>' + (it.type === 'image' ? 'รูปภาพ' : ytId(it.src) ? 'YouTube' : 'ฝังเว็บ') + '</small></div>'
-      + '<button data-a="go">ดู</button><button data-a="up"' + (k ? '' : ' disabled') + '>↑</button><button data-a="dn"' + (k < list.length - 1 ? '' : ' disabled') + '>↓</button>'
-      + '<button data-a="ed">✎</button><button data-a="del" class="del">ลบ</button></div>').join('')
-      : '<div class="im-empty">ยังไม่มีหน้าแทรกในช่วงนี้</div>';
-  }
-  // insert after/before the slide being viewed; "before tab i" is stored as after tab i-1 (-1 = before first tab)
-  function addInsert(type, src) {
-    const before = document.querySelector('input[name=impos]:checked').value === 'before';
-    const sl = curSlide(); let g, at;
-    if (sl.kind === 'ins') { const idx = EXTRA.findIndex(x => x.id === sl.id); g = EXTRA[idx].at; at = before ? idx : idx + 1; }
-    else { g = before ? sl.i - 1 : sl.i;
-      at = EXTRA.length; for (let k = EXTRA.length - 1; k >= 0; k--) if (EXTRA[k].at === g) { at = k + 1; break; } }
-    const it = { id: newId(), at: g, type, src, title: $('imTitle').value.trim() };
-    EXTRA.splice(at, 0, it); $('imTitle').value = ''; showErr(''); save();
-    show(SEQ().findIndex(x => x.kind === 'ins' && x.id === it.id));
-    document.querySelector('input[name=impos][value=after]').checked = true;
-    renderIns(); return it;
-  }
-  function shrink(file) { return new Promise((res, rej) => { const fr = new FileReader(); fr.onerror = rej; fr.onload = () => { const im = new Image(); im.onerror = rej; im.onload = () => {
-    const k = Math.min(1, 1920 / Math.max(im.width, im.height)), cv = document.createElement('canvas'); cv.width = Math.round(im.width * k); cv.height = Math.round(im.height * k);
-    const x = cv.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, cv.width, cv.height); x.drawImage(im, 0, 0, cv.width, cv.height); res(cv.toDataURL('image/jpeg', .86)); }; im.src = fr.result; }; fr.readAsDataURL(file); }); }
-  function normUrl(v) { v = v.trim(); if (!v) return null; if (!/^https?:\/\//i.test(v)) v = 'https://' + v; try { new URL(v); return v; } catch (e) { return null; } }
-
-  document.querySelectorAll('.im-tabs button').forEach(b => b.onclick = () => {
-    document.querySelectorAll('.im-tabs button').forEach(x => x.classList.toggle('on', x === b));
-    $('imImage').style.display = b.dataset.tab === 'image' ? 'block' : 'none'; $('imEmbed').style.display = b.dataset.tab === 'embed' ? 'block' : 'none'; showErr(''); });
-  $('imFile').onchange = async e => {
-    const files = [...e.target.files].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-    for (const f of files) { if (!f.type.startsWith('image/')) { showErr('ไฟล์ ' + f.name + ' ไม่ใช่รูปภาพ'); continue; }
-      try { if (!$('imTitle').value && files.length > 1) $('imTitle').value = f.name.replace(/\.[^.]+$/, ''); addInsert('image', await shrink(f)); } catch (err) { showErr('อ่านไฟล์ไม่สำเร็จ: ' + f.name); } }
-    e.target.value = '';
-  };
-  document.querySelectorAll('.im-add').forEach(b => b.onclick = () => {
-    const inp = b.dataset.kind === 'image' ? $('imImgUrl') : $('imWebUrl'), u = normUrl(inp.value);
-    if (!u) return showErr('ลิงก์ไม่ถูกต้อง'); addInsert(b.dataset.kind, u); inp.value = ''; });
-  ['imImgUrl', 'imWebUrl'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') $(id).nextElementSibling.click(); }));
-  $('insModal').addEventListener('paste', async e => {
-    const item = [...(e.clipboardData && e.clipboardData.items || [])].find(x => x.type.startsWith('image/'));
-    if (!item) return; e.preventDefault(); try { addInsert('image', await shrink(item.getAsFile())); } catch (err) { showErr('วางรูปไม่สำเร็จ'); } });
-  $('imList').onclick = e => {
-    const b = e.target.closest('button'), row = e.target.closest('.im-item'); if (!b || !row) return;
-    const id = row.dataset.id, k = EXTRA.findIndex(x => x.id === id), g = EXTRA[k].at, a = b.dataset.a;
-    const sib = d => { for (let j = k + d; j >= 0 && j < EXTRA.length; j += d) if (EXTRA[j].at === g) return j; return -1; };
-    if (a === 'go') { closeIns(); show(SEQ().findIndex(x => x.kind === 'ins' && x.id === id)); return; }
-    if (a === 'del') { if (!confirm('ลบหน้านี้?')) return; const viewing = curSlide().id === id; EXTRA.splice(k, 1); save(); show(viewing ? pos - 1 : pos); return; }
-    const keep = curSlide();
-    if (a === 'up' || a === 'dn') { const j = sib(a === 'up' ? -1 : 1); if (j < 0) return; [EXTRA[k], EXTRA[j]] = [EXTRA[j], EXTRA[k]]; }
-    else if (a === 'ed') { const t = prompt('แก้หัวข้อ', EXTRA[k].title); if (t === null) return; EXTRA[k].title = t.trim(); }
-    save();
-    show(SEQ().findIndex(x => x.kind === keep.kind && (keep.kind === 'main' ? x.i === keep.i : x.id === keep.id)));
-  };
-  $('imX').onclick = closeIns;
-  $('imDone').onclick = () => { closeIns(); show(pos); };
-  $('insModal').addEventListener('click', e => { if (e.target.id === 'insModal') $('imDone').onclick(); });
-  $('pIns').onclick = openIns;
-
-  // --- backup / restore inserted slides (.json) ---
-  $('imExport').onclick = () => {
-    const blob = new Blob([JSON.stringify({ app: 'data-npn-slides', version: 1, exported: new Date().toISOString(), items: EXTRA })], { type: 'application/json' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = 'สไลด์แทรก-' + new Date().toISOString().slice(0, 10) + '.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 8000);
-  };
-  $('imImport').onclick = () => $('imImportFile').click();
-  $('imImportFile').onchange = e => {
-    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-    const fr = new FileReader();
-    fr.onload = () => {
-      try {
-        const d = JSON.parse(fr.result), items = Array.isArray(d) ? d : d.items;
-        if (!Array.isArray(items)) throw new Error('รูปแบบไฟล์ไม่ถูกต้อง');
-        const ok = items.filter(x => x && (x.type === 'image' || x.type === 'embed') && typeof x.src === 'string'
-            && /^(data:image\/|https?:\/\/)/.test(x.src) && Number.isInteger(x.at) && x.at >= -1 && x.at < tabs.length)
-          .map(x => ({ id: newId(), at: x.at, type: x.type, src: x.src, title: String(x.title || '') }));
-        if (!ok.length) throw new Error('ไม่พบหน้าที่นำเข้าได้');
-        const replace = EXTRA.length > 0 && confirm('มีหน้าแทรกอยู่แล้ว ' + EXTRA.length + ' หน้า\nOK = แทนที่ทั้งหมด · Cancel = เพิ่มต่อท้าย');
-        EXTRA = replace ? ok : EXTRA.concat(ok); save(); show(pos); showErr('');
-        alert('นำเข้าแล้ว ' + ok.length + ' หน้า');
-      } catch (err) { showErr('นำเข้าไม่สำเร็จ: ' + err.message); }
-    };
-    fr.readAsText(f);
-  };
-
-  // --- PDF via browser print: every tab + inserted slides, in presentation order ---
-  $('pPdf').onclick = () => {
-    closeIns();
-    const made = [];
-    const mk = it => { const d = document.createElement('div'); d.className = 'print-ins';
-      d.innerHTML = (it.title ? '<h2>' + escH(it.title) + '</h2>' : '') + (it.type === 'image' ? '<img src="' + escH(it.src) + '">'
-        : '<p>' + (ytId(it.src) ? 'วิดีโอ YouTube' : 'ลิงก์เว็บไซต์') + ': ' + escH(it.src) + '</p>'); made.push(d); return d; };
-    EXTRA.filter(x => x.at === -1).forEach(it => sections[0].before(mk(it)));
-    tabs.forEach((t, i) => { let ref = sections[i]; EXTRA.filter(x => x.at === i).forEach(it => { const d = mk(it); ref.after(d); ref = d; }); });
-    document.body.classList.add('printing');
-    const done = () => { document.body.classList.remove('printing'); made.forEach(d => d.remove()); window.removeEventListener('afterprint', done); };
-    window.addEventListener('afterprint', done);
-    setTimeout(() => { try { drawReliabilityChart(); } catch (e) {} window.print(); }, 300);
-  };
-
-  XDB.get().then(v => { EXTRA = Array.isArray(v) ? v : []; updInsBtn(); });
-})();
+  },
+  onExit: back => { document.body.classList.remove('present'); showSection(back); },
+  beforePrint: () => { try { drawReliabilityChart(); } catch (e) {} },
+  blockKeys: () => overlay.classList.contains('open'),
+  exitWithFullscreen: true
+});
+document.getElementById('btnPresent').addEventListener('click', () =>
+  PK.enter([...tabs].findIndex(t => t.classList.contains('active'))));
+tabs.forEach((t, i) => t.addEventListener('click', () => PK.goMain(i)));
 
 // ============ RELIABILITY CHART ============
 function drawReliabilityChart() {

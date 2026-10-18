@@ -167,11 +167,17 @@
   .s-chips .cv { font-size:clamp(22px,3vw,44px); }
   .s-list { list-style:none; display:grid; gap:1.4vh; }
   .s-list li { display:flex; justify-content:space-between; gap:20px; padding:1.6vh 1.6vw; background:var(--surface); border:1px solid var(--border); border-radius:14px; font-size:clamp(15px,1.9vw,28px); box-shadow:var(--shadow); }
-  .deck-bar { display:flex; align-items:center; justify-content:space-between; padding:8px 24px; border-top:1px solid var(--border); background:var(--surface); }
-  .deck-bar .m-nav-btn { padding:6px 14px; }
-  .deck-bar > span { display:flex; gap:8px; align-items:center; }
-  .deck-prog { position:absolute; left:0; bottom:0; height:4px; background:var(--gold); transition:width .3s; }
-  @media print { #deck { position:static; } }
+  /* room for the floating PresentKit bar */
+  .slide { padding-bottom:110px; }
+  #insSlide.active { position:absolute; left:0; right:0; top:7px; bottom:0; z-index:2; overflow:auto; padding:4vh 6vw 110px; background:var(--bg); }
+  #insSlide h2 { color:var(--purple); }
+  @media print {
+    body.pk-printing header.app, body.pk-printing main, body.pk-printing footer, body.pk-printing > .top-bar, body.pk-printing #deck > .top-bar { display:none !important; }
+    body.pk-printing #deck { position:static; display:block; background:none; }
+    body.pk-printing .slides { overflow:visible; }
+    body.pk-printing .slide { display:flex !important; position:relative; inset:auto; opacity:1; animation:none; min-height:185mm; padding:8mm 10mm;
+      break-after:page; page-break-after:always; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
 
   footer { text-align:center; color:var(--text-3); font-size:12.5px; padding:22px; }
 
@@ -246,20 +252,12 @@
   </div>
 </div>
 
+<script src="present-kit.js"></script>
 <!-- Presentation deck -->
 <div id="deck">
   <div class="top-bar"></div>
   <div class="slides" id="slides"></div>
-  <div class="deck-bar">
-    <button class="m-nav-btn" id="dPrev">◀ ก่อนหน้า</button>
-    <span class="m-counter" id="dCount"></span>
-    <span>
-      <button class="m-nav-btn" id="dFull" title="เต็มจอ (F)">⛶</button>
-      <button class="m-nav-btn" id="dExit" title="ออก (Esc)">✕ ออก</button>
-      <button class="m-nav-btn" id="dNext">ถัดไป ▶</button>
-    </span>
-  </div>
-  <div class="deck-prog" id="dProg"></div>
+  <div id="insSlide"></div>
 </div>
 
 <script>
@@ -398,30 +396,25 @@ function buildDeck(){
   slidesEl.innerHTML=s.join('');
   slidesEl.querySelectorAll('.brand-logo').forEach(l=>{l.style.width=l.style.height='90px';l.style.fontSize='42px';l.style.background='rgba(255,255,255,.15)';l.style.margin='0 auto 24px';});
 }
-let si=0, slideEls=[];
-function showSlide(i){
-  si=Math.max(0,Math.min(slideEls.length-1,i));
-  slideEls.forEach((el,k)=>el.classList.toggle('active',k===si));
-  document.getElementById('dCount').textContent=`สไลด์ ${si+1} / ${slideEls.length}`;
-  document.getElementById('dPrev').disabled=si===0;
-  document.getElementById('dNext').disabled=si===slideEls.length-1;
-  document.getElementById('dProg').style.width=((si+1)/slideEls.length*100)+'%';
-}
-function startDeck(){ buildDeck(); slideEls=[...slidesEl.children]; deck.classList.add('show'); showSlide(0); }
-function endDeck(){ deck.classList.remove('show'); if(document.fullscreenElement) document.exitFullscreen(); }
-document.getElementById('presentBtn').onclick=startDeck;
-document.getElementById('dExit').onclick=endDeck;
-document.getElementById('dPrev').onclick=()=>showSlide(si-1);
-document.getElementById('dNext').onclick=()=>showSlide(si+1);
-document.getElementById('dFull').onclick=()=>{ document.fullscreenElement?document.exitFullscreen():deck.requestFullscreen&&deck.requestFullscreen(); };
-document.addEventListener('keydown',e=>{
-  if(!deck.classList.contains('show')){ if((e.key==='p'||e.key==='P')&&!overlay.classList.contains('show')) startDeck(); return; }
-  if(['ArrowRight','PageDown',' ','Enter'].includes(e.key)){ e.preventDefault(); showSlide(si+1); }
-  else if(['ArrowLeft','PageUp','Backspace'].includes(e.key)){ e.preventDefault(); showSlide(si-1); }
-  else if(e.key==='Home') showSlide(0);
-  else if(e.key==='End') showSlide(slideEls.length-1);
-  else if(e.key==='f'||e.key==='F') document.getElementById('dFull').click();
-  else if(e.key==='Escape') endDeck();
+let slideEls=[];
+const PK = PresentKit.create({
+  deck: 'finance',
+  count: () => slideEls.length,
+  title: i => { const el = slideEls[i]; const h = el && el.querySelector('h2.st'); return h ? h.textContent.trim() : 'สไลด์ ' + (i + 1); },
+  showMain: i => slideEls.forEach((el, k) => el.classList.toggle('active', k === i)),
+  hideMain: () => slideEls.forEach(el => el.classList.remove('active')),
+  container: document.getElementById('insSlide'),
+  mainEl: i => slideEls[i],
+  onEnter: () => { buildDeck(); slideEls = [...slidesEl.children]; deck.classList.add('show'); },
+  onExit: () => deck.classList.remove('show'),
+  fullscreenEl: deck,
+  blockKeys: () => overlay.classList.contains('show')
+});
+function startDeck() { PK.enter(0); }
+document.getElementById('presentBtn').onclick = startDeck;
+document.addEventListener('keydown', e => {
+  if (!PK.isActive() && (e.key === 'p' || e.key === 'P') && !overlay.classList.contains('show')
+      && !(e.target.closest && e.target.closest('input,textarea'))) startDeck();
 });
 
 /* ----- Load data from Google Sheet ("เสริมการเงิน") ----- */
