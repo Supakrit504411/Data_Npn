@@ -222,7 +222,7 @@
       <p class="hero-subtitle">
         ระบบรายงานผลดำเนินงาน
         <br>
-        <span class="period">ม.ค.–มิ.ย. 2569</span>
+        <span class="period" id="periodLabel">ม.ค.–มิ.ย. 2569</span>
       </p>
 
       <a class="line-btn" href="#" id="lineLoginBtn">
@@ -265,6 +265,20 @@
     localStorage.setItem('apps_script_url', APPS_SCRIPT_URL);
     window.location.href = url;
   });
+
+  // Update period badge from sheet header (cache first, then fresh)
+  function setPeriod(data) {
+    try {
+      var h = data && data.headers;
+      if (!h) return;
+      for (var i = 1; i < h.length; i++) {
+        var t = String(h[i]).trim().replace(/\s+/g, ' ').replace(/[-–—]/g, '–');
+        if (/69/.test(t)) { document.getElementById('periodLabel').textContent = t.replace(/\s*(25)?69\s*$/, '') + ' 2569'; return; }
+      }
+    } catch (e) {}
+  }
+  try { setPeriod(JSON.parse(localStorage.getItem('pea_sheet_cache'))); } catch (e) {}
+  fetch(APPS_SCRIPT_URL + '?action=getData').then(function(r) { return r.json(); }).then(setPeriod).catch(function() {});
 </script>
 </body>
 </html>
