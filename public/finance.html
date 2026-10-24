@@ -167,6 +167,20 @@
   .s-chips .cv { font-size:clamp(22px,3vw,44px); }
   .s-list { list-style:none; display:grid; gap:1.4vh; }
   .s-list li { display:flex; justify-content:space-between; gap:20px; padding:1.6vh 1.6vw; background:var(--surface); border:1px solid var(--border); border-radius:14px; font-size:clamp(15px,1.9vw,28px); box-shadow:var(--shadow); }
+  .s-bd { display:grid; gap:1.2vh; }
+  .s-bd-row { display:grid; grid-template-columns:minmax(0,2.4fr) minmax(0,1.6fr) minmax(0,1.6fr) minmax(0,1.3fr); gap:1.4vw; align-items:center; padding:1.3vh 1.6vw; background:var(--surface); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); font-size:clamp(13px,1.45vw,22px); }
+  .s-bd-row.hd { background:none; border:0; box-shadow:none; padding-top:0; padding-bottom:0; color:var(--text-3); font-weight:700; font-size:clamp(11px,1.05vw,16px); }
+  .s-bd-row.hd > :not(:first-child) { text-align:right; }
+  .s-bd-row.tot { background:var(--purple-glow); border-color:var(--purple); font-weight:800; }
+  .s-bd-name { font-weight:700; }
+  .s-bd-name .s-bd-bars { margin-top:.7vh; display:grid; gap:4px; }
+  .s-bd-bar { height:clamp(5px,.8vh,9px); border-radius:6px; }
+  .s-bd-bar.a { background:linear-gradient(90deg,var(--purple),var(--purple-light)); }
+  .s-bd-bar.b { background:var(--gold); opacity:.75; }
+  .s-bd-row .v { text-align:right; }
+  .s-bd-row .v small { display:block; color:var(--text-3); font-size:.72em; font-weight:600; }
+  .s-bd-legend { display:flex; gap:18px; margin-top:1.6vh; font-size:clamp(11px,1vw,15px); color:var(--text-3); }
+  .s-bd-legend i { display:inline-block; width:14px; height:8px; border-radius:4px; margin-right:6px; vertical-align:middle; }
   /* room for the floating PresentKit bar */
   .slide { padding-bottom:110px; }
   #insSlide.active { position:absolute; left:0; right:0; top:7px; bottom:0; z-index:2; overflow:auto; padding:4vh 6vw 110px; background:var(--bg); }
@@ -366,7 +380,8 @@ document.addEventListener('keydown',e=>{
 const deck=document.getElementById('deck'), slidesEl=document.getElementById('slides');
 const pct=p=>p==null?'–':(p>=0?'▲ +':'▼ ')+p.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
 function compareSlide(eyebrow,name,title){
-  const [n,a,b,d,p]=byName(name); const ratio=isRatio(n), unit=ratio?'%':' บาท', up=d>=0;
+  const r=byName(name); if(!r||r[1]==null) return '';
+  const [n,a,b,d,p]=r; const ratio=isRatio(n), unit=ratio?'%':' บาท', up=d>=0;
   const max=Math.max(Math.abs(a),Math.abs(b))||1;
   return `<div class="slide"><div class="eyebrow">${eyebrow}</div><h2 class="st">${title||n}</h2>
    <div class="s-years"><div class="m-yr cur"><div class="yl">ปี 2569</div><div class="yv num" style="${a<0?'color:var(--neg)':''}">${fmt(a)}${unit}</div></div>
@@ -376,23 +391,48 @@ function compareSlide(eyebrow,name,title){
    <div class="s-chips"><div class="m-chip ${up?'up':'down'}"><div class="cl">ผลต่างจำนวนเงิน</div><div class="cv num">${up?'+':''}${fmt(d)}${ratio?' จุด':' บาท'}</div></div>
    <div class="m-chip ${up?'up':'down'}"><div class="cl">เปลี่ยนแปลง</div><div class="cv num">${pct(p)}</div></div></div></div>`;
 }
+/* breakdown slide: several line items side by side; totalName (optional) is shown as a highlighted last row */
+function breakdownSlide(eyebrow,title,names,totalName){
+  const rows=names.map(byName).filter(r=>r&&r[1]!=null);
+  const tot=totalName?byName(totalName):null;
+  if(!rows.length) return '';
+  const max=Math.max(...rows.flatMap(r=>[Math.abs(r[1]),Math.abs(r[2])]))||1;
+  const label=n=>n.replace(/^(บวก|หัก)\s+|^-\s+|^ค่าซื้อไฟฟ้า - /,'');
+  const row=(r,isTot)=>{ const [n,a,b,d,p]=r;
+    const bars=isTot?'':`<div class="s-bd-bars"><div class="s-bd-bar a" style="width:${Math.abs(a)/max*100}%"></div><div class="s-bd-bar b" style="width:${Math.abs(b)/max*100}%"></div></div>`;
+    return `<div class="s-bd-row${isTot?' tot':''}"><div class="s-bd-name">${isTot?n:label(n)}${bars}</div>
+      <div class="v num">${fmt0(a)}</div><div class="v num">${fmt0(b)}</div>
+      <div class="v num ${d>=0?'pos':'neg'}">${pct(p)}<small>${d>=0?'+':''}${fmt0(d)}</small></div></div>`; };
+  return `<div class="slide"><div class="eyebrow">${eyebrow}</div><h2 class="st">${title}</h2>
+    <div class="s-bd"><div class="s-bd-row hd"><div>รายการ (บาท)</div><div>ปี 2569</div><div>ปี 2568</div><div>เปลี่ยนแปลง</div></div>
+    ${rows.map(r=>row(r)).join('')}${tot?row(tot,true):''}</div>
+    <div class="s-bd-legend"><span><i style="background:var(--purple)"></i>ปี 2569</span><span><i style="background:var(--gold)"></i>ปี 2568</span></div></div>`;
+}
 function buildDeck(){
-  const net=byName("กำไร(ขาดทุน)สุทธิ");
   const movers=ROWS.filter(r=>r[3]!=null&&r[4]!=null&&!isRatio(r[0])&&Math.abs(r[3])>0)
     .sort((x,y)=>Math.abs(y[3])-Math.abs(x[3])).slice(0,6);
   const s=[];
   s.push(`<div class="slide cover"><div class="logo brand-logo" style="display:flex;align-items:center;justify-content:center;border-radius:22px;color:#fff;font-weight:800">฿</div>
-    <div class="eyebrow">สรุปผลการดำเนินงาน</div><h2 class="st">งบกำไรขาดทุน กฟจ.</h2><div class="sub">ปี 2569 เทียบ ปี 2568 · หน่วย: บาท</div></div>`);
+    <div class="eyebrow">สรุปผลการดำเนินงาน</div><h2 class="st">งบกำไรขาดทุน กฟจ.นครพนม</h2><div class="sub">ปี 2569 เทียบ ปี 2568 · หน่วย: บาท</div></div>`);
   s.push(`<div class="slide"><div class="eyebrow">ภาพรวม</div><h2 class="st">ตัวชี้วัดหลัก</h2><div class="s-kpis">${kEl.innerHTML}</div></div>`);
   s.push(compareSlide('รายได้','รายได้จากการจำหน่ายไฟฟ้า'));
   s.push(compareSlide('ต้นทุน','รวม ต้นทุนค่าไฟฟ้า'));
+  s.push(breakdownSlide('ต้นทุน','ค่าซื้อไฟฟ้าแยกตามแหล่ง',
+    ["ค่าซื้อไฟฟ้า - กฟผ. สุทธิ","ค่าซื้อไฟฟ้า - VSPP","ค่าซื้อไฟฟ้า - Solar Rooftop"],"รวม ต้นทุนค่าไฟฟ้า"));
   s.push(compareSlide('ผลกำไร','กำไรขั้นต้น'));
+  s.push(breakdownSlide('รายได้','รายได้ธุรกิจเสริม',
+    ["- รายได้จากการก่อสร้างให้ผู้ใช้ไฟ","- รายได้จากการจัดการพลังงาน (ติดตั้ง Solar)","- รายได้จากการให้ใช้เสาไฟฟ้า","- รายได้ธุรกิจเสริมอื่นๆ"]));
+  s.push(breakdownSlide('รายได้','รายได้ค่าบริการอื่น และรายได้อื่น',["บวก รายได้ค่าบริการอื่น","บวก รายได้อื่น"]));
   s.push(compareSlide('ค่าใช้จ่าย','หัก ค่าใช้จ่ายเกี่ยวกับบุคลากร (สุทธิ)','ค่าใช้จ่ายเกี่ยวกับบุคลากร'));
   s.push(compareSlide('ค่าใช้จ่าย','หัก ค่าใช้จ่ายในการดำเนินงาน (สุทธิ)','ค่าใช้จ่ายในการดำเนินงาน'));
+  s.push(breakdownSlide('ค่าใช้จ่าย','ค่าใช้จ่ายทั้งหมด',
+    ["หัก ค่าใช้จ่ายเกี่ยวกับบุคลากร (สุทธิ)","หัก ค่าใช้จ่ายในการดำเนินงาน (สุทธิ)","หัก ค่าใช้จ่ายอื่นๆ","หัก ค่าใช้จ่ายทางอ้อมโอนปิดเข้างาน (โสหุ้ย)"]));
   s.push(compareSlide('ผลการดำเนินงาน','กำไร(ขาดทุน)จากการดำเนินงาน'));
+  s.push(breakdownSlide('มาตรการรัฐ','เงินชดเชย เงินสนับสนุน และส่วนลดค่าไฟฟ้า',
+    ["บวก เงินชดเชยรายได้","บวก เงินสนับสนุนมาตรการรัฐ","หัก ส่วนลดค่าไฟฟ้า"]));
   s.push(`<div class="slide"><div class="eyebrow">ประเด็นเด่น</div><h2 class="st">รายการที่เปลี่ยนแปลงมากที่สุด</h2><ul class="s-list">${movers.map(r=>`<li><span>${r[0]}</span><span class="num ${r[3]>=0?'pos':'neg'}">${r[3]>=0?'+':''}${fmt0(r[3])} (${pct(r[4])})</span></li>`).join('')}</ul></div>`);
   s.push(compareSlide('สรุป','กำไร(ขาดทุน)สุทธิ'));
-  s.push(`<div class="slide cover"><h2 class="st">ขอบคุณครับ</h2><div class="sub">ขาดทุนสุทธิ ${fmt0(Math.abs(net[1]))} บาท · ${net[3]>=0?'ลดลง':'เพิ่มขึ้น'} ${fmt0(Math.abs(net[3]))} บาท จากปีก่อน</div></div>`);
+  s.push(`<div class="slide cover"><h2 class="st">ขอบคุณครับ</h2></div>`);
   slidesEl.innerHTML=s.join('');
   slidesEl.querySelectorAll('.brand-logo').forEach(l=>{l.style.width=l.style.height='90px';l.style.fontSize='42px';l.style.background='rgba(255,255,255,.15)';l.style.margin='0 auto 24px';});
 }
