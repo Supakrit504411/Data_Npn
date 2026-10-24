@@ -151,6 +151,7 @@
    * opts: {
    *   deck: 'dashboard' | 'finance',
    *   count(): number of main slides,
+   *   skip(i): optional — true hides main slide i (and the pages inserted after it) from the presentation and PDF,
    *   title(i): title of main slide i,
    *   showMain(i), hideMain(),          // display / hide the page's own slides
    *   container: element that shows an inserted slide (gets class pk-ins),
@@ -187,10 +188,11 @@
     const save = () => { XDB.set(keyFor(opts.deck), EXTRA).catch(() => showErr('บันทึกไม่สำเร็จ (พื้นที่เบราว์เซอร์อาจเต็ม) — หน้าที่แทรกยังใช้ได้จนกว่าจะปิดหน้า'));
       updBadge(); if (modal.classList.contains('show')) renderIns(); };
 
+    const skipped = i => !!(opts.skip && opts.skip(i));
     // order: inserts before the first slide (at -1), then each main slide followed by its inserts
     function SEQ() {
       const L = EXTRA.filter(x => x.at === -1).map(x => ({ kind: 'ins', id: x.id }));
-      for (let i = 0; i < opts.count(); i++) { L.push({ kind: 'main', i }); EXTRA.filter(x => x.at === i).forEach(x => L.push({ kind: 'ins', id: x.id })); }
+      for (let i = 0; i < opts.count(); i++) { if (skipped(i)) continue; L.push({ kind: 'main', i }); EXTRA.filter(x => x.at === i).forEach(x => L.push({ kind: 'ins', id: x.id })); }
       return L;
     }
     const cur = () => SEQ()[pos];
@@ -401,7 +403,7 @@
         d.innerHTML = (it.title ? '<h2>' + escH(it.title) + '</h2>' : '') + (it.type === 'image' ? '<img src="' + escH(it.src) + '">'
           : '<p>' + (ytId(it.src) ? 'วิดีโอ YouTube' : 'ลิงก์เว็บไซต์') + ': ' + escH(it.src) + '</p>'); made.push(d); return d; };
       EXTRA.filter(x => x.at === -1).forEach(it => opts.mainEl(0).before(mk(it)));
-      for (let i = 0; i < opts.count(); i++) { let ref = opts.mainEl(i); EXTRA.filter(x => x.at === i).forEach(it => { const d = mk(it); ref.after(d); ref = d; }); }
+      for (let i = 0; i < opts.count(); i++) { if (skipped(i)) continue; let ref = opts.mainEl(i); EXTRA.filter(x => x.at === i).forEach(it => { const d = mk(it); ref.after(d); ref = d; }); }
       if (opts.beforePrint) opts.beforePrint();
       document.body.classList.add('pk-printing');
       const done = () => { document.body.classList.remove('pk-printing'); made.forEach(d => d.remove());

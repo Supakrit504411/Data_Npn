@@ -532,7 +532,18 @@
   /* inserted slide sits inside .content (zoomed 1.2x while presenting) */
   body.present #insView img { max-height: calc((100vh - 230px) / 1.2); }
   body.present #insView iframe { height: calc((100vh - 250px) / 1.2); }
+  /* Choosing which tabs are presented: hidden tabs are dimmed on the page and left out of the presentation/PDF */
+  .tab.pres-off { opacity: 0.45; text-decoration: line-through; }
+  body.tab-pick .tabs { outline: 2px dashed var(--purple); outline-offset: 2px; border-radius: 14px; padding: 6px 6px 8px; margin-bottom: 8px; }
+  body.tab-pick .tab::before { content: '✓'; display: inline-block; width: 1.3em; font-weight: 800; color: var(--positive); }
+  body.tab-pick .tab.pres-off::before { content: '✕'; color: var(--negative); }
+  body.tab-pick .tab.pres-off { text-decoration: none; }
+  .btn-icon.picking { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .tab-pick-hint { display: none; font-size: 13px; color: var(--text-3); margin: 0 4px 12px; }
+  body.tab-pick .tab-pick-hint { display: block; }
+  body.present .tab.pres-off, body.present .tab-pick-hint { display: none; }
   @media print {
+    body.pk-printing .section.pres-off { display: none !important; }
     body.pk-printing .header, body.pk-printing .page-footer { display: none !important; }
     body.pk-printing .content { zoom: 1 !important; padding: 0 !important; }
     body.pk-printing .section { display: block !important; break-after: page; page-break-after: always; }
@@ -548,6 +559,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         งบกำไรขาดทุน
       </a>
+      <button class="btn-icon" id="btnPickTabs" title="เลือกแท็บที่จะแสดงในโหมดนำเสนอ">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span id="pickLbl">เลือกหน้า</span>
+      </button>
       <button class="btn-icon" id="btnPresent" title="โหมดนำเสนอ (เต็มจอ)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
         นำเสนอ
@@ -576,6 +591,7 @@
     <button class="tab" data-i="10">ข้อมูลทั้งหมด</button>
     <button class="tab" data-i="11">การเงินละเอียด</button>
   </div>
+  <div class="tab-pick-hint">กดที่แท็บเพื่อเลือก (✓) หรือซ่อน (✕) ในโหมดนำเสนอ · กด "เสร็จ" เมื่อเลือกครบ</div>
 </div>
 
 
@@ -1162,7 +1178,7 @@
   <div style="margin-top:2px;">การไฟฟ้าส่วนภูมิภาค จังหวัดนครพนม &copy; 2569</div>
 </div>
 
-<script src="present-kit.js"></script>
+<script src="present-kit.js?v=2"></script>
 <script>
 // ============ AUTH GUARD ============
 (function() {
@@ -2047,9 +2063,42 @@ document.addEventListener('keydown', e => {
 });
 
 // ============ PRESENTATION MODE (shared PresentKit: inserted slides per LINE user, PDF) ============
+// tabs switched off here are skipped while presenting (remembered in this browser)
+const PRES_OFF_KEY = 'dash_pres_off';
+let presOff = new Set();
+try { presOff = new Set(JSON.parse(localStorage.getItem(PRES_OFF_KEY) || '[]').filter(i => i >= 0 && i < tabs.length)); } catch (e) {}
+const pickBtn = document.getElementById('btnPickTabs');
+function renderPresOff() {
+  tabs.forEach((t, i) => t.classList.toggle('pres-off', presOff.has(i)));
+  sections.forEach((s, i) => s.classList.toggle('pres-off', presOff.has(i)));
+  const on = tabs.length - presOff.size;
+  document.getElementById('pickLbl').textContent = document.body.classList.contains('tab-pick')
+    ? 'เสร็จ (' + on + '/' + tabs.length + ')' : (presOff.size ? 'เลือกหน้า (' + on + '/' + tabs.length + ')' : 'เลือกหน้า');
+}
+function setPicking(on) {
+  document.body.classList.toggle('tab-pick', on);
+  pickBtn.classList.toggle('picking', on);
+  renderPresOff();
+}
+pickBtn.addEventListener('click', () => setPicking(!document.body.classList.contains('tab-pick')));
+// while picking, a tab click toggles it instead of opening it (capture runs before the tabs' own handlers)
+document.getElementById('tabs').addEventListener('click', e => {
+  if (!document.body.classList.contains('tab-pick')) return;
+  const t = e.target.closest('.tab'); if (!t) return;
+  e.stopPropagation();
+  const i = +t.dataset.i;
+  if (presOff.has(i)) presOff.delete(i);
+  else if (presOff.size < tabs.length - 1) presOff.add(i);
+  else { alert('ต้องเหลืออย่างน้อย 1 แท็บสำหรับนำเสนอ'); return; }
+  try { localStorage.setItem(PRES_OFF_KEY, JSON.stringify([...presOff])); } catch (err) {}
+  renderPresOff();
+}, true);
+renderPresOff();
+
 const PK = PresentKit.create({
   deck: 'dashboard',
   count: () => tabs.length,
+  skip: i => presOff.has(i),
   title: i => tabs[i].textContent.trim(),
   showMain: i => showSection(i),
   hideMain: at => {
@@ -2069,8 +2118,11 @@ const PK = PresentKit.create({
   blockKeys: () => overlay.classList.contains('open'),
   exitWithFullscreen: true
 });
-document.getElementById('btnPresent').addEventListener('click', () =>
-  PK.enter([...tabs].findIndex(t => t.classList.contains('active'))));
+document.getElementById('btnPresent').addEventListener('click', () => {
+  setPicking(false);
+  const cur = [...tabs].findIndex(t => t.classList.contains('active'));
+  PK.enter(presOff.has(cur) ? [...tabs.keys()].find(i => !presOff.has(i)) : cur);
+});
 tabs.forEach((t, i) => t.addEventListener('click', () => PK.goMain(i)));
 
 // ============ RELIABILITY CHART ============
